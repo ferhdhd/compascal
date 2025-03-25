@@ -2,6 +2,8 @@
 
 %{
 #include "parser.tab.h"
+char err_buffer[500];
+int yyerror(char *s);
 %}
 
 DIGITOS [0-9]+
@@ -37,7 +39,8 @@ ID [a-zA-Z][a-zA-Z1-9]*
 {ID} { return ID; }
 "program" { return PROGRAM; }
 
-\n { return EOL;}
-[ \t]+ ;
+\n { return EOL; }
+[ \t] {/*ignorar espacos em branco, incluindo tabs*/}
+. { sprintf(err_buffer, "caracter estranho '%c'", *yytext); yyerror(err_buffer); }
 
 %%

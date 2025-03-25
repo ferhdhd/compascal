@@ -11,9 +11,18 @@
 
 %%
 
-entrada:
-    entrada token '\n' { printf("\n"); } // Aguarda a nova linha para processar tokens
-    | /* vazio */
+input: 
+    /* Regra vazia para permitir múltiplas entradas */
+    | input line
+    ;
+
+line:
+    token_list EOL { printf("Linha processada!\n"); }
+    ;
+
+token_list:
+    token
+    | token_list token
     ;
 
 token:
@@ -43,8 +52,7 @@ token:
     | VAR { printf("Token: VAR\n"); }
     | PONTO_FINAL { printf("Token: PONTO_FINAL\n"); }
     | PROGRAM { printf("Token: PROGRAM\n"); }
-    | error { printf("Erro léxico!\n"); }
-    | EOL { printf("Token: EOL"); }
+    | error { printf("Erro léxico!\n"); yyerrok; }
     ;
 
 %%
