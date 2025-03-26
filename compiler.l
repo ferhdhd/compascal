@@ -36,8 +36,9 @@ ID [a-zA-Z][a-zA-Z1-9]*
 "integer" { return INTEIRO; }
 "var" { return VAR; }
 "." { return PONTO_FINAL; }
-{ID} { return ID; }
 "program" { return PROGRAM; }
+"," { return VIRGULA; }
+{ID} { return ID; }
 
 \n { return EOL; }
 [ \t] {/*ignorar espacos em branco, incluindo tabs*/}
