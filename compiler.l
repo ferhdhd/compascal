@@ -38,7 +38,9 @@ ID [a-zA-Z][a-zA-Z1-9]*
 "." { return PONTO_FINAL; }
 "program" { return PROGRAM; }
 "," { return VIRGULA; }
-{ID} { return ID; }
+{ID} { 
+    yylval.str = strdup(yytext);
+    return ID; }
 
 \n { return EOL; }
 [ \t] {/*ignorar espacos em branco, incluindo tabs*/}

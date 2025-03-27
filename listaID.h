@@ -4,7 +4,9 @@
 typedef struct nodoID {
     char *var;
     char *tipo;
+    int ehFunc;
     int ehGlobal;
+    int escopo;
     struct nodoID *prox;
 } nodoID;
 
