@@ -1,6 +1,7 @@
 %option yylineno
 
 %{
+#include "listaID.h"
 #include "parser.tab.h"
 char err_buffer[500];
 int yyerror(char *s);

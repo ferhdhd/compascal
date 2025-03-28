@@ -2,8 +2,8 @@
 #define LISTA_ID_H
 
 typedef struct nodoID {
-    char *var;
-    char *tipo;
+    char nome[500];
+    char tipo[500];
     int ehFunc;
     int ehGlobal;
     int escopo;
@@ -12,7 +12,10 @@ typedef struct nodoID {
 
 
 nodoID* criaNodo (char *s);
-int concatNodo(nodoID *head, char *s);
-int destroiLista(nodoID *head);
+nodoID* concatNodo (nodoID *head, char *s);
+void setTipo (nodoID* head, char* tipo);
+void attTabelaSimbolos (nodoID* head, nodoID* aux);
+void printTs (nodoID* ts);
+int destroiLista (nodoID *head);
 
 #endif
