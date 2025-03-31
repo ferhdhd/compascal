@@ -1,9 +1,9 @@
-all: parser
+all: compiler
 
-parser: parser.y compiler.l listaID.c
-	bison -d parser.y
+compiler: compiler.y compiler.l listaID.c
+	bison -d compiler.y
 	flex compiler.l
-	gcc -o parser parser.tab.c lex.yy.c listaID.c -lfl
+	gcc -o compiler compiler.tab.c lex.yy.c listaID.c -lfl
 
 clean:
-	rm -f parser parser.tab.c parser.tab.h lex.yy.c
+	rm -f compiler compiler.tab.c compiler.tab.h lex.yy.c

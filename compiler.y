@@ -1,5 +1,6 @@
 %{
     #include <stdio.h>
+    #include <stdlib.h>
     #include "listaID.h"
     void yyerror(const char *s);    
     int yylex();
@@ -9,6 +10,8 @@
     nodoID *ts = NULL;
 
 %}
+
+%define parse.error detailed
 
 %union {
     char *str;
@@ -35,7 +38,7 @@ LISTA_DE_IDENTIFICADORES: ID {$$ = concatNodo(NULL, $1);}
                         | LISTA_DE_IDENTIFICADORES VIRGULA ID {$$ = concatNodo($1, $3);}
                         ;
 
-DECLARACOES: DECLARACOES VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO PONTO_VIRGULA {setTipo($3, $5); attTabelaSimbolos(ts, $3);} 
+DECLARACOES: DECLARACOES VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO PONTO_VIRGULA {setTipo($3, $5); ts = attTabelaSimbolos(ts, $3);} 
            | /* empty */ 
            ;
 
@@ -47,6 +50,7 @@ TIPO: INTEIRO {$$ = "INTEIRO";}
 
 void yyerror(const char *s) {
     fprintf(stderr, "Erro: %s na linha: %d\n", s, yylineno);
+    exit(1);
 }
 
 int main() {

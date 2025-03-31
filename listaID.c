@@ -1,4 +1,5 @@
 #include "listaID.h"
+#include "compiler.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,6 +10,7 @@ nodoID* criaNodo (char *s) {
 
     novoNodo->ehGlobal = 99;
     novoNodo->prox = NULL;
+    novoNodo->prev = NULL;
     strcpy(novoNodo->tipo, "");
     novoNodo->ehFunc = 0;
     strcpy(novoNodo->nome, s);
@@ -26,6 +28,7 @@ nodoID* concatNodo (nodoID *head, char *s) {
         while (head->prox != NULL)
             head = head->prox;
         head->prox = novoNodo;
+        novoNodo->prev = head;
     }
 
     return head;
@@ -39,25 +42,51 @@ void setTipo (nodoID* head, char* tipo) {
     }
 }
 
-void attTabelaSimbolos (nodoID* head, nodoID* aux) {
-    if (!head) {
-        head = aux;
-    } else {
-        while (head->prox)
-            head = head->prox;
-        head->prox = aux;
+nodoID* simboloExisteTabela (nodoID* ts, nodoID *novaLista) { 
+    while (novaLista) {
+        nodoID *inicioLista = ts;
+        while (inicioLista) {
+            if (!strcmp(inicioLista->nome, novaLista->nome) && inicioLista->escopo == novaLista->escopo)
+                return novaLista;
+            printf("primeiro simb: %s segundo simb: %s\n" , inicioLista->nome, novaLista->nome);
+            inicioLista = inicioLista->prev;
+        }
+        novaLista = novaLista->prox;
     }
 
-    return;
+    return NULL;
+}
+
+
+nodoID* attTabelaSimbolos (nodoID* head, nodoID* aux) {
+    if (head) {
+        // Verificação para saber se o símbolo já existe na TS
+        printf("vai pra funcao\n");
+        nodoID *verificacao = simboloExisteTabela(head, aux);
+        if (verificacao != NULL) {
+            char erro[1000];
+            sprintf(erro, "simbolo '%s' ja declarado antes", verificacao->nome);
+            yyerror(erro);
+        }
+
+        while (head->prox) // Atinge o final da lista de símbolos
+            head = head->prox;
+        head->prox = aux; // Concatena o final da lista de símbolos com a nova lista a ser adicionada
+        aux->prev = head; // Aqui tbm
+    }
+    while (aux->prox) // Vai até o ultimo item da TS e retorna ele
+        aux = aux->prox;
+
+    return aux;
 }
 
 void printTs (nodoID* ts) {
+    printf("----- TABELA DE SÍMBOLOS -----\n");
     while (ts) {
-        printf("----- TABELA DE SÍMBOLOS -----\n");
         printf("nome: %s, op: %d, tipo: %s \n", ts->nome, ts->ehFunc, ts->tipo);
-        printf("------------------------------\n");
-        ts = ts->prox;
+        ts = ts->prev;
     }
+    printf("------------------------------\n");
 }
 
 int destroiLista (nodoID *head) {

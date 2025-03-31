@@ -1,0 +1,7 @@
+program testeif (input,output);
+var
+ a,b: integer;
+var
+ x,y: real;
+var
+ a,b: integer;
