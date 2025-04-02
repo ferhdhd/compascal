@@ -4,23 +4,22 @@
 #include <stdio.h>
 #include <string.h>
 
-nodoID* criaNodo (char *s) {
+nodoID* criaNodoVar (char *s, char *tipo_simbolo, int escopo_atual) {
     printf("Criando Nodo %s\n" ,s);
     nodoID* novoNodo = malloc(sizeof(nodoID));
-
-    novoNodo->ehGlobal = 99;
+    novoNodo->escopo = escopo_atual;
     novoNodo->prox = NULL;
     novoNodo->prev = NULL;
     strcpy(novoNodo->tipo, "");
-    novoNodo->ehFunc = 0;
+    strcpy(novoNodo->tipo_simbolo, tipo_simbolo);
     strcpy(novoNodo->nome, s);
 
     return novoNodo;
 }
 
-nodoID* concatNodo (nodoID *head, char *s) {
+nodoID* concatNodo (nodoID *head, char *s, char *tipo_simbolo, int escopo_atual) {
     printf("Concatenado Nodo %s\n" ,s);
-    nodoID* novoNodo = criaNodo(s);
+    nodoID* novoNodo = criaNodoVar(s, tipo_simbolo, escopo_atual);
 
     if (head == NULL) {
         head = novoNodo;
@@ -83,7 +82,7 @@ nodoID* attTabelaSimbolos (nodoID* head, nodoID* aux) {
 void printTs (nodoID* ts) {
     printf("----- TABELA DE SÍMBOLOS -----\n");
     while (ts) {
-        printf("nome: %s, op: %d, tipo: %s \n", ts->nome, ts->ehFunc, ts->tipo);
+        printf("nome: %s, simbolo: %s, tipo: %s, escopo: %d \n", ts->nome, ts->tipo_simbolo, ts->tipo, ts->escopo);
         ts = ts->prev;
     }
     printf("------------------------------\n");
