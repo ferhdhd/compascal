@@ -9,6 +9,8 @@
     int escopo_atual = 0;
     nodoID *ts = NULL;
 
+    FILE *llvm_file;
+
 %}
 
 %define parse.error detailed
@@ -131,7 +133,11 @@ void yyerror(const char *s) {
 }
 
 int main() {
-    printf("Digite uma expressão e pressione Enter:\n");
+    
+    llvm_file = fopen("arquivo.llvm" "w");
+
     yyparse();
+
+    fclose(llvm_file);
     return 0;
 }
