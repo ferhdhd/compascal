@@ -12,13 +12,13 @@ typedef struct nodoID {
     struct nodoID *prev;
 } nodoID;
 
-
-nodoID* criaNodoVar (char *s, char *tipo_simbolo, int escopo_atual);
 nodoID* concatNodo (nodoID *head, char *s, char *tipo_simbolo, int escopo_atual);
 void setTipo (nodoID* head, char* tipo);
+void setTipoSimb (nodoID* head, char* t_simb);
 nodoID* attTabelaSimbolos (nodoID* head, nodoID* aux);
 void printTs (nodoID* ts);
 nodoID* simboloExisteTabela (nodoID* ts,nodoID *novaLista);
 int destroiLista (nodoID *head);
+nodoID* destroiGlobais (nodoID *head);
 
 #endif

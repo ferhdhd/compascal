@@ -41,6 +41,14 @@ void setTipo (nodoID* head, char* tipo) {
     }
 }
 
+void setTipoSimb (nodoID* head, char* tipo_simbolo) {
+    printf("Setando Tipo Símbolo: %s\n" , tipo_simbolo);
+    while (head) {
+        strcpy(head->tipo_simbolo, tipo_simbolo);
+        head = head->prox;
+    }
+}
+
 nodoID* simboloExisteTabela (nodoID* ts, nodoID *novaLista) { 
     while (novaLista) {
         nodoID *inicioLista = ts;
@@ -102,4 +110,21 @@ int destroiLista (nodoID *head) {
     }
     return 0;
 }
+
+nodoID* destroiGlobais (nodoID *head) {
+    printf("Destruindo lista\n");
+    
+    nodoID *aux;
+    if (head) {
+        while (head->escopo == 1) {
+            aux = head->prev;
+            free(head);
+            head = aux;
+        }
+        
+        head->prox = NULL;
+    }
+    return head;
+}
+
 
