@@ -111,7 +111,7 @@ int destroiLista (nodoID *head) {
     return 0;
 }
 
-nodoID* destroiGlobais (nodoID *head) {
+nodoID* destroiLocais (nodoID *head) {
     printf("Destruindo lista\n");
     
     nodoID *aux;

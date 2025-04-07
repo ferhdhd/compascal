@@ -2,6 +2,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include "listaID.h"
+    #include "llvm.h"
     void yyerror(const char *s);    
     int yylex();
     extern int yylineno;
@@ -34,7 +35,7 @@
 %%
 
 PROGRAMA: PROGRAM ID ABRE_PARENTESES LISTA_DE_IDENTIFICADORES {destroiLista($4);} FECHA_PARENTESES PONTO_VIRGULA
-        DECLARACOES {printTs(ts);}
+        DECLARACOES {printTs(ts); emiteGlobal(llvm_file, ts);}
         DECLARACOES_DE_SUBPROGRAMAS {printTs(ts);}
         ;
 
@@ -50,7 +51,7 @@ TIPO: INTEIRO {$$ = "INTEIRO";}
     | REAL  {$$ = "REAL";}
     ;
 
-DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRAMA {printTs(ts); ts = destroiGlobais(ts); printTs(ts);} PONTO_VIRGULA
+DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRAMA {printTs(ts); emiteFunc(llvm_file, ts); ts = destroiLocais(ts); printTs(ts);} PONTO_VIRGULA
                            | /* empty */
                            ;
 
@@ -58,7 +59,7 @@ DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES ENUNCIADO_COMPOS
                          ;
 
 CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++;} ARGUMENTOS DOIS_PONTOS TIPO {setTipo($1, $6);} PONTO_VIRGULA 
-                        | PROCEDURE ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); setTipo($1, "void"); ts = attTabelaSimbolos(ts, $1);} ARGUMENTOS PONTO_VIRGULA 
+                        | PROCEDURE ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); setTipo($1, "VOID"); ts = attTabelaSimbolos(ts, $1);} ARGUMENTOS PONTO_VIRGULA 
                         ;
 
 ARGUMENTOS: ABRE_PARENTESES LISTA_DE_PARAMETROS FECHA_PARENTESES
@@ -134,7 +135,7 @@ void yyerror(const char *s) {
 
 int main() {
     
-    llvm_file = fopen("arquivo.llvm" "w");
+    llvm_file = fopen("arquivo.llvm", "w");
 
     yyparse();
 

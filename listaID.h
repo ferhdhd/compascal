@@ -19,6 +19,6 @@ nodoID* attTabelaSimbolos (nodoID* head, nodoID* aux);
 void printTs (nodoID* ts);
 nodoID* simboloExisteTabela (nodoID* ts,nodoID *novaLista);
 int destroiLista (nodoID *head);
-nodoID* destroiGlobais (nodoID *head);
+nodoID* destroiLocais (nodoID *head);
 
 #endif
