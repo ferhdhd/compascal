@@ -5,7 +5,7 @@
 void emiteGlobal (FILE* fp, nodoID* nodo) {
     
     while (nodo) {
-    fprintf(fp, "@%s = global float 0\n", nodo->nome, converteTipo(nodo->tipo));
+    fprintf(fp, "@%s = global %s 0\n", nodo->nome, converteTipo(nodo->tipo));
     nodo = nodo->prev;
     }
 }
@@ -25,10 +25,8 @@ void emiteFunc (FILE* fp, nodoID* nodo) {
 
 nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
     do {
-        if (!strcmp("parametro", nodo->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->tipo_simbolo)) {
-            fprintf(fp, ", "); // na primeira iteracao, nao coloca virgula
-        }
-
+        
+        
         if (!strcmp("parametro", nodo->tipo_simbolo)) {
             fprintf(fp, "%s ", converteTipo(nodo->tipo));
             fprintf(fp, "%", nodo->nome);
@@ -39,6 +37,10 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
             fprintf(fp, "%s_t", nodo->nome);
         }
         
+        if ((!strcmp("parametro", nodo->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->tipo_simbolo)) && nodo->prox != NULL) {
+            fprintf(fp, ", "); // na primeira iteracao, nao coloca virgula
+        }
+
         nodo = nodo->prox;
     } while ((!strcmp("parametro", nodo->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->tipo_simbolo)));
 
