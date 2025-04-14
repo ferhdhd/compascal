@@ -96,6 +96,16 @@ void printTs (nodoID* ts) {
     printf("------------------------------\n");
 }
 
+nodoID* procuraTabelaSimbolos (nodoID* ts, char *nome) {
+    while (ts) {
+        if (strcmp(ts->nome, nome))
+            return ts;
+        ts = ts->prox;
+    }
+
+    return NULL;
+}
+
 int destroiLista (nodoID *head) {
     printf("Destruindo lista\n");
     
@@ -125,6 +135,43 @@ nodoID* destroiLocais (nodoID *head) {
         head->prox = NULL;
     }
     return head;
+}
+
+int ehFloat (char* num) {
+    for (int i = 0; i < strlen(num); i++) {
+        if (num[i] == '.')
+            return 1;
+    }
+
+    return 0;
+}
+
+exp_t* cria_exp(nodoID *ts, char *tipo_simbolo, char *nome, int id_atual) {
+    exp_t *novo_exp = malloc(sizeof(exp_t));
+
+    strcpy(novo_exp->tipo_simbolo, tipo_simbolo); //primeiramente sao definidos vazios se ja existem em outro momento
+    strcpy(novo_exp->nome, nome);                 // como variaveis ja declaradas
+
+    if (!strcmp(novo_exp->tipo_simbolo, "numero")) {
+        novo_exp->nodo_tabela = NULL;
+
+        if (ehFloat(nome))
+            strcpy(novo_exp->tipo, "REAL");
+        else
+            strcpy(novo_exp->tipo, "INTEIRO");
+    } else {
+        novo_exp->nodo_tabela = procuraTabelaSimbolos(ts, nome);
+
+        if (!novo_exp->nodo_tabela) {
+                char erro[1000];
+                sprintf(erro, "simbolo '%s' nao declarado anteriormente", nome);
+                yyerror(erro);
+        }
+        strcpy(novo_exp->tipo, novo_exp->nodo_tabela->tipo);
+        strcpy(novo_exp->tipo_simbolo, tipo_simbolo); // outros tipos sao definidos aqui
+
+    }
+
 }
 
 

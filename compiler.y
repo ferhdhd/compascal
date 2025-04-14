@@ -32,6 +32,9 @@
 %type <lID> FUNCTION PROCEDURE
 %type <tipo> TIPO
 
+%left '+' '-'
+%left '*' '/'
+
 %%
 
 PROGRAMA: PROGRAM ID ABRE_PARENTESES LISTA_DE_IDENTIFICADORES {destroiLista($4);} FECHA_PARENTESES PONTO_VIRGULA
