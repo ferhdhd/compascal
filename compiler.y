@@ -8,6 +8,8 @@
     extern int yylineno;
 
     int escopo_atual = 0;
+    int id_atual = 0;
+
     nodoID *ts = NULL;
 
     FILE *llvm_file;
@@ -20,10 +22,12 @@
     char *str;
     char *tipo;
     nodoID *lID;
+    exp_t *exp;
 }
 
 %token <str> ID
-%token NUM OPERADOR_MULTIPLICATIVO OR MENOS MAIS OPERADOR_RELACIONAL 
+%token <str> NUM
+%token OPERADOR_MULTIPLICATIVO OR MENOS MAIS OPERADOR_RELACIONAL 
 %token OPERADOR_ATRIBUICAO DO WHILE ELSE THEN IF END BEGIN_TOKEN
 %token DOIS_PONTOS PONTO_VIRGULA FECHA_PARENTESES ABRE_PARENTESES
 %token PROCEDURE FUNCTION REAL INTEIRO VAR PONTO_FINAL PROGRAM VIRGULA
@@ -31,6 +35,13 @@
 %type <lID> LISTA_DE_IDENTIFICADORES 
 %type <lID> FUNCTION PROCEDURE
 %type <tipo> TIPO
+%type <exp> FATOR
+%type <exp> TERMO
+// %type <exp> LISTA_DE_EXPRESSOES
+%type <exp> EXPRESSAO
+%type <exp> EXPRESSAO_SIMPLES
+%type <exp> VARIAVEL
+%type <str> SINAL
 
 %left '+' '-'
 %left '*' '/'
@@ -54,11 +65,11 @@ TIPO: INTEIRO {$$ = "INTEIRO";}
     | REAL  {$$ = "REAL";}
     ;
 
-DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRAMA {printTs(ts); emiteFunc(llvm_file, ts); ts = destroiLocais(ts); printTs(ts);} PONTO_VIRGULA
+DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRAMA {printTs(ts); ts = destroiLocais(ts); printTs(ts);} PONTO_VIRGULA
                            | /* empty */
                            ;
 
-DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES ENUNCIADO_COMPOSTO {escopo_atual--;}
+DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {fprintf(llvm_file, "}\n"); escopo_atual--; id_atual = 0;}
                          ;
 
 CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++;} ARGUMENTOS DOIS_PONTOS TIPO {setTipo($1, $6);} PONTO_VIRGULA 
@@ -119,9 +130,9 @@ TERMO: FATOR
      | TERMO OPERADOR_MULTIPLICATIVO FATOR
      ;
 
-FATOR: ID
+FATOR: ID {cria_exp(ts, llvm_file, "", $1, id_atual); id_atual++;}
      | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES
-     | NUM 
+     | NUM {printf("TESTE: %s\n" , $1); cria_exp(ts, llvm_file, "numero", $1, id_atual); id_atual++;}
      | ABRE_PARENTESES EXPRESSAO FECHA_PARENTESES 
      ;
 

@@ -13,7 +13,8 @@ ID [a-zA-Z][a-zA-Z1-9]*
 
 %%
 
-{NUM} { return NUM; }
+{NUM} { yylval.str = strdup(yytext);
+        return NUM; }
 "*"|"/"|"div"|"mod"|"and" { return OPERADOR_MULTIPLICATIVO; }
 "or" { return OR; }
 "-" { return MENOS; }

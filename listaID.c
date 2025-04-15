@@ -1,7 +1,7 @@
 #include "listaID.h"
 #include "compiler.h"
+#include "llvm.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 nodoID* criaNodoVar (char *s, char *tipo_simbolo, int escopo_atual) {
@@ -146,7 +146,7 @@ int ehFloat (char* num) {
     return 0;
 }
 
-exp_t* cria_exp(nodoID *ts, char *tipo_simbolo, char *nome, int id_atual) {
+exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atual) {
     exp_t *novo_exp = malloc(sizeof(exp_t));
 
     strcpy(novo_exp->tipo_simbolo, tipo_simbolo); //primeiramente sao definidos vazios se ja existem em outro momento
@@ -159,6 +159,9 @@ exp_t* cria_exp(nodoID *ts, char *tipo_simbolo, char *nome, int id_atual) {
             strcpy(novo_exp->tipo, "REAL");
         else
             strcpy(novo_exp->tipo, "INTEIRO");
+        
+        novo_exp->id_temporario = id_atual;
+        //emiteNumero(fp, novo_exp, id_atual);
     } else {
         novo_exp->nodo_tabela = procuraTabelaSimbolos(ts, nome);
 
@@ -170,8 +173,11 @@ exp_t* cria_exp(nodoID *ts, char *tipo_simbolo, char *nome, int id_atual) {
         strcpy(novo_exp->tipo, novo_exp->nodo_tabela->tipo);
         strcpy(novo_exp->tipo_simbolo, tipo_simbolo); // outros tipos sao definidos aqui
 
+        emiteVar(fp, novo_exp, id_atual);
+
     }
 
+    return novo_exp;
 }
 
 

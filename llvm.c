@@ -1,4 +1,3 @@
-#include "listaID.h"
 #include "llvm.h"
 #include <string.h>
 
@@ -18,8 +17,6 @@ void emiteFunc (FILE* fp, nodoID* nodo) {
 
     fprintf(fp, "\ndefine %s @%s(", converteTipo(nodo->tipo), nodo->nome); // escreve o nome da funcao e seu tipo
     nodo = emiteParametrosFunc(fp, nodo->prox);
-
-    fprintf(fp, "}\n"); // fim da funcao
 
 }
 
@@ -74,4 +71,15 @@ char *converteTipo (char* tipo) {
         return "void";
     
 }
+
+void emiteNumero(FILE *fp, exp_t *novo_exp, int id_atual) {
+    //printf("TESTE: %s" , )
+void emiteVar(FILE *fp, exp_t *novo_exp, int id_atual);
+    fprintf(fp, "%%%d = add %s 0, %s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
+}
+
+void emiteVar(FILE *fp, exp_t *novo_exp, int id_atual) {
+    fprintf(fp, "%%%d = load %s, ptr %s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
+}
+
 
