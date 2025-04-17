@@ -25,9 +25,8 @@
     exp_t *exp;
 }
 
-%token <str> ID
-%token <str> NUM
-%token OPERADOR_MULTIPLICATIVO OR MENOS MAIS OPERADOR_RELACIONAL 
+%token <str> NUM <str> ID <str> OPERADOR_MULTIPLICATIVO
+%token OR MENOS MAIS OPERADOR_RELACIONAL 
 %token OPERADOR_ATRIBUICAO DO WHILE ELSE THEN IF END BEGIN_TOKEN
 %token DOIS_PONTOS PONTO_VIRGULA FECHA_PARENTESES ABRE_PARENTESES
 %token PROCEDURE FUNCTION REAL INTEIRO VAR PONTO_FINAL PROGRAM VIRGULA
@@ -69,7 +68,7 @@ DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRA
                            | /* empty */
                            ;
 
-DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {fprintf(llvm_file, "}\n"); escopo_atual--; id_atual = 0;}
+DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {fprintf(llvm_file, "\n}\n"); escopo_atual--; id_atual = 0;}
                          ;
 
 CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++;} ARGUMENTOS DOIS_PONTOS TIPO {setTipo($1, $6);} PONTO_VIRGULA 
@@ -121,18 +120,18 @@ EXPRESSAO: EXPRESSAO_SIMPLES
 
 EXPRESSAO_SIMPLES: TERMO
                  | SINAL TERMO  
-                 | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES 
+                 | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES {emiteSoma(llvm_file, $1, $3, id_atual); id_atual++;}
                  | EXPRESSAO_SIMPLES MENOS EXPRESSAO_SIMPLES 
                  | EXPRESSAO_SIMPLES OR EXPRESSAO_SIMPLES 
                  ;
 
 TERMO: FATOR
-     | TERMO OPERADOR_MULTIPLICATIVO FATOR
+     | TERMO OPERADOR_MULTIPLICATIVO FATOR {emiteOpMult(llvm_file, $1, $3, $2, id_atual);}
      ;
 
-FATOR: ID {cria_exp(ts, llvm_file, "", $1, id_atual); id_atual++;}
+FATOR: ID {$$ = cria_exp(ts, llvm_file, "", $1, id_atual); id_atual++;}
      | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES
-     | NUM {printf("TESTE: %s\n" , $1); cria_exp(ts, llvm_file, "numero", $1, id_atual); id_atual++;}
+     | NUM {$$ = cria_exp(ts, llvm_file, "numero", $1, id_atual); id_atual++;}
      | ABRE_PARENTESES EXPRESSAO FECHA_PARENTESES 
      ;
 

@@ -15,7 +15,9 @@ ID [a-zA-Z][a-zA-Z1-9]*
 
 {NUM} { yylval.str = strdup(yytext);
         return NUM; }
-"*"|"/"|"div"|"mod"|"and" { return OPERADOR_MULTIPLICATIVO; }
+"*"|"/"|"div"|"mod"|"and" { 
+    yylval.str = strdup(yytext);
+    return OPERADOR_MULTIPLICATIVO; }
 "or" { return OR; }
 "-" { return MENOS; }
 "+" { return MAIS; }

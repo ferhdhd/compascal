@@ -73,13 +73,21 @@ char *converteTipo (char* tipo) {
 }
 
 void emiteNumero(FILE *fp, exp_t *novo_exp, int id_atual) {
-    //printf("TESTE: %s" , )
-void emiteVar(FILE *fp, exp_t *novo_exp, int id_atual);
     fprintf(fp, "%%%d = add %s 0, %s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
 }
 
 void emiteVar(FILE *fp, exp_t *novo_exp, int id_atual) {
     fprintf(fp, "%%%d = load %s, ptr %s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
 }
+
+void emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
+    fprintf(fp, "%%%d = add %s %%%d, %%%d", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+}
+
+void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual) {
+    if (!strcmp("*", op)) {
+    
+    }
+ }
 
 

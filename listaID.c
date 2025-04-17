@@ -98,9 +98,9 @@ void printTs (nodoID* ts) {
 
 nodoID* procuraTabelaSimbolos (nodoID* ts, char *nome) {
     while (ts) {
-        if (strcmp(ts->nome, nome))
+        if (!strcmp(ts->nome, nome))
             return ts;
-        ts = ts->prox;
+        ts = ts->prev;
     }
 
     return NULL;
@@ -160,8 +160,9 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
         else
             strcpy(novo_exp->tipo, "INTEIRO");
         
+        emiteNumero(fp, novo_exp, id_atual);
         novo_exp->id_temporario = id_atual;
-        //emiteNumero(fp, novo_exp, id_atual);
+        printf("EXP: %s, id_temp: %d\n", novo_exp->nome, novo_exp->id_temporario);
     } else {
         novo_exp->nodo_tabela = procuraTabelaSimbolos(ts, nome);
 
@@ -174,6 +175,8 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
         strcpy(novo_exp->tipo_simbolo, tipo_simbolo); // outros tipos sao definidos aqui
 
         emiteVar(fp, novo_exp, id_atual);
+        
+        novo_exp->id_temporario = id_atual;
 
     }
 

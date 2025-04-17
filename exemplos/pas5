@@ -3,5 +3,5 @@ var x,y: integer;
 var z: real;
 function plus (a,b: integer): integer;
 begin
-    a := a + b
+    a := 1 + 2
 end;
