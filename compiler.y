@@ -114,13 +114,16 @@ LISTA_DE_EXPRESSOES: EXPRESSAO
                    | LISTA_DE_EXPRESSOES VIRGULA EXPRESSAO
                    ;
 
-EXPRESSAO: EXPRESSAO_SIMPLES
+EXPRESSAO: EXPRESSAO_SIMPLES {$$ = $1;}
          | EXPRESSAO_SIMPLES OPERADOR_RELACIONAL EXPRESSAO_SIMPLES
          ;
 
 EXPRESSAO_SIMPLES: TERMO
                  | SINAL TERMO  
-                 | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES {emiteSoma(llvm_file, $1, $3, id_atual); id_atual++;}
+                 | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES 
+                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $3, id_atual);
+                 emiteSoma(llvm_file, $1, $3, id_atual); 
+                 id_atual++;}
                  | EXPRESSAO_SIMPLES MENOS EXPRESSAO_SIMPLES 
                  | EXPRESSAO_SIMPLES OR EXPRESSAO_SIMPLES 
                  ;
@@ -132,7 +135,7 @@ TERMO: FATOR
 FATOR: ID {$$ = cria_exp(ts, llvm_file, "", $1, id_atual); id_atual++;}
      | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES
      | NUM {$$ = cria_exp(ts, llvm_file, "numero", $1, id_atual); id_atual++;}
-     | ABRE_PARENTESES EXPRESSAO FECHA_PARENTESES 
+     | ABRE_PARENTESES EXPRESSAO FECHA_PARENTESES {$$ = $2;}
      ;
 
 SINAL: MAIS

@@ -154,11 +154,13 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
 
     if (!strcmp(novo_exp->tipo_simbolo, "numero")) {
         novo_exp->nodo_tabela = NULL;
-
-        if (ehFloat(nome))
-            strcpy(novo_exp->tipo, "REAL");
-        else
-            strcpy(novo_exp->tipo, "INTEIRO");
+        
+        if (!strcmp("", nome) != 1) {
+            if (ehFloat(nome))
+                strcpy(novo_exp->tipo, "REAL");
+            else
+                strcpy(novo_exp->tipo, "INTEIRO");
+        }
         
         emiteNumero(fp, novo_exp, id_atual);
         novo_exp->id_temporario = id_atual;
@@ -179,6 +181,24 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
         novo_exp->id_temporario = id_atual;
 
     }
+
+    return novo_exp;
+}
+
+exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, exp_t *dir, int id_atual) {
+    exp_t *novo_exp = malloc(sizeof(exp_t));
+
+    strcpy(novo_exp->tipo_simbolo, tipo_simbolo);
+    novo_exp->nodo_tabela = NULL;
+    strcpy(novo_exp->nome, "exp");
+    
+    if (!strcmp(esq->tipo, "REAL") || !strcmp(dir->tipo, "REAL")) {
+        strcpy(novo_exp->tipo, "REAL");
+    } else {
+        strcpy(novo_exp->tipo, "INTEIRO");
+    }
+
+    novo_exp->id_temporario = id_atual;
 
     return novo_exp;
 }

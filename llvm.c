@@ -81,7 +81,10 @@ void emiteVar(FILE *fp, exp_t *novo_exp, int id_atual) {
 }
 
 void emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
-    fprintf(fp, "%%%d = add %s %%%d, %%%d", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    if (!strcmp("REAL", exp_esq->tipo))
+        fprintf(fp, "%%%d = add %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    else
+        fprintf(fp, "%%%d = add %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
 }
 
 void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual) {
