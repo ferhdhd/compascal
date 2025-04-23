@@ -25,8 +25,8 @@
     exp_t *exp;
 }
 
-%token <str> NUM <str> ID <str> OPERADOR_MULTIPLICATIVO
-%token OR MENOS MAIS OPERADOR_RELACIONAL 
+%token <str> NUM <str> ID <str> OPERADOR_MULTIPLICATIVO <str> MAIS <str> MENOS <str> OR
+%token OPERADOR_RELACIONAL 
 %token OPERADOR_ATRIBUICAO DO WHILE ELSE THEN IF END BEGIN_TOKEN
 %token DOIS_PONTOS PONTO_VIRGULA FECHA_PARENTESES ABRE_PARENTESES
 %token PROCEDURE FUNCTION REAL INTEIRO VAR PONTO_FINAL PROGRAM VIRGULA
@@ -39,7 +39,7 @@
 // %type <exp> LISTA_DE_EXPRESSOES
 %type <exp> EXPRESSAO
 %type <exp> EXPRESSAO_SIMPLES
-%type <exp> VARIAVEL
+%type <str> VARIAVEL
 %type <str> SINAL
 
 %left '+' '-'
@@ -96,7 +96,7 @@ LISTA_DE_ENUNCIADOS: ENUNCIADO
                    | LISTA_DE_ENUNCIADOS PONTO_VIRGULA ENUNCIADO
                    ;
 
-ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO
+ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {armazenaVar(llvm_file, $1, $3, ts);}
          | CHAMADA_DE_PROCEDIMENTO
          | ENUNCIADO_COMPOSTO
          | IF EXPRESSAO THEN ENUNCIADO ELSE ENUNCIADO
@@ -121,15 +121,21 @@ EXPRESSAO: EXPRESSAO_SIMPLES {$$ = $1;}
 EXPRESSAO_SIMPLES: TERMO
                  | SINAL TERMO  
                  | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES 
-                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $3, id_atual);
+                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
                  emiteSoma(llvm_file, $1, $3, id_atual); 
                  id_atual++;}
                  | EXPRESSAO_SIMPLES MENOS EXPRESSAO_SIMPLES 
+                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
+                 emiteSubtracao(llvm_file, $1, $3, id_atual); 
+                 id_atual++;}
                  | EXPRESSAO_SIMPLES OR EXPRESSAO_SIMPLES 
+                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
+                 emiteOr(llvm_file, $1, $3, id_atual); 
+                 id_atual++;}
                  ;
 
 TERMO: FATOR
-     | TERMO OPERADOR_MULTIPLICATIVO FATOR {emiteOpMult(llvm_file, $1, $3, $2, id_atual);}
+     | TERMO OPERADOR_MULTIPLICATIVO FATOR {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual); emiteOpMult(llvm_file, $1, $3, $2, id_atual); id_atual++;}
      ;
 
 FATOR: ID {$$ = cria_exp(ts, llvm_file, "", $1, id_atual); id_atual++;}

@@ -185,7 +185,17 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
     return novo_exp;
 }
 
-exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, exp_t *dir, int id_atual) {
+exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, char *op, exp_t *dir, int id_atual) {
+    
+    // verificacao de erros para operadores multiplicativos
+    if (!strcmp(op, "and") || !strcmp(op, "mod") || !strcmp(op, "div")) {
+        if (!(!strcmp(esq->tipo, "INTEIRO") && !strcmp(dir->tipo, "INTEIRO"))) {
+            char erro[1000];
+            sprintf(erro, "a operação %s precisa de duas expressões de tipo INTEIRO para funcionar!\n", op);
+            yyerror(erro);            
+        }
+    }
+    
     exp_t *novo_exp = malloc(sizeof(exp_t));
 
     strcpy(novo_exp->tipo_simbolo, tipo_simbolo);

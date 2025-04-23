@@ -1,4 +1,5 @@
 #include "llvm.h"
+#include "compiler.h"
 #include <string.h>
 
 void emiteGlobal (FILE* fp, nodoID* nodo) {
@@ -87,10 +88,47 @@ void emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
         fprintf(fp, "%%%d = add %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
 }
 
+void emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
+    if (!strcmp("REAL", exp_esq->tipo))
+        fprintf(fp, "%%%d = sub %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    else
+        fprintf(fp, "%%%d = sub %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+}
+
+void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
+    if (!strcmp("REAL", exp_esq->tipo))
+        fprintf(fp, "%%%d = or %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    else
+        fprintf(fp, "%%%d = or %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+}
+
+
 void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual) {
     if (!strcmp("*", op)) {
-    
+        if (!strcmp("REAL", exp_esq->tipo))
+            fprintf(fp, "%%%d = mul %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        else
+            fprintf(fp, "%%%d = mul %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else if (!strcmp("div", op)) {
+        fprintf(fp, "%%%d = sdiv %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else if (!strcmp("mod", op)) {
+        fprintf(fp, "%%%d = srem %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else if (!strcmp("and", op)) {
+        fprintf(fp, "%%%d = and %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     }
  }
 
+ void armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
+    nodoID *aux = procuraTabelaSimbolos(ts, var);
+    if (aux == NULL) {
+        char erro[1000];
+        sprintf(erro, "a variavel %s nao foi declarada anteriormente!\n", var);
+        yyerror(erro);     
+    } else if (!strcmp(aux->tipo, "INTEIRO") && !strcmp(exp->tipo, "REAL")) {
+        char erro[1000];
+        sprintf(erro, "a variavel %s eh do tipo inteiro, enquanto a expressao eh real!\n", var);
+        yyerror(erro);  
+    }
 
+    fprintf(fp, "store %s %%%d, %%%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
+ }

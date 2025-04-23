@@ -33,6 +33,6 @@ nodoID* destroiLocais (nodoID *head);
 int ehFloat (char* num);
 
 exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atual);
-exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, exp_t *dir, int id_atual);
+exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, char* op, exp_t *dir, int id_atual);
 
 #endif
