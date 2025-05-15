@@ -26,13 +26,13 @@
 }
 
 %token <str> NUM <str> ID <str> OPERADOR_MULTIPLICATIVO <str> MAIS <str> MENOS <str> OR
+%token <lID> FUNCTION PROCEDURE
 %token OPERADOR_RELACIONAL 
 %token OPERADOR_ATRIBUICAO DO WHILE ELSE THEN IF END BEGIN_TOKEN
 %token DOIS_PONTOS PONTO_VIRGULA FECHA_PARENTESES ABRE_PARENTESES
-%token PROCEDURE FUNCTION REAL INTEIRO VAR PONTO_FINAL PROGRAM VIRGULA
+%token REAL INTEIRO VAR PONTO_FINAL PROGRAM VIRGULA
 
 %type <lID> LISTA_DE_IDENTIFICADORES 
-%type <lID> FUNCTION PROCEDURE
 %type <tipo> TIPO
 %type <exp> FATOR
 %type <exp> TERMO
@@ -56,7 +56,7 @@ LISTA_DE_IDENTIFICADORES: ID {$$ = concatNodo(NULL, $1, "variavel", escopo_atual
                         | LISTA_DE_IDENTIFICADORES VIRGULA ID {$$ = concatNodo($1, $3, "variavel", escopo_atual);}
                         ;
 
-DECLARACOES: DECLARACOES VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO PONTO_VIRGULA {setTipo($3, $5); ts = attTabelaSimbolos(ts, $3);} 
+DECLARACOES: DECLARACOES VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO PONTO_VIRGULA {setTipo($3, $5); ts = attTabelaSimbolos(ts, $3); printTs(ts);} 
            | /* empty */ 
            ;
 
@@ -72,7 +72,7 @@ DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_
                          ;
 
 CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++;} ARGUMENTOS DOIS_PONTOS TIPO {setTipo($1, $6);} PONTO_VIRGULA 
-                        | PROCEDURE ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); setTipo($1, "VOID"); ts = attTabelaSimbolos(ts, $1);} ARGUMENTOS PONTO_VIRGULA 
+                        | PROCEDURE ID {$1 = concatNodo(NULL, $2, "procedure", escopo_atual); setTipo($1, "VOID"); ts = attTabelaSimbolos(ts, $1); escopo_atual++;} ARGUMENTOS PONTO_VIRGULA 
                         ;
 
 ARGUMENTOS: ABRE_PARENTESES LISTA_DE_PARAMETROS FECHA_PARENTESES
@@ -138,7 +138,17 @@ TERMO: FATOR
      | TERMO OPERADOR_MULTIPLICATIVO FATOR {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual); emiteOpMult(llvm_file, $1, $3, $2, id_atual); id_atual++;}
      ;
 
-FATOR: ID {$$ = cria_exp(ts, llvm_file, "", $1, id_atual); id_atual++;}
+FATOR: ID 
+    {
+        if (var_func_proc(ts, $1) == 0) {
+        printf("eh var\n");
+        $$ = cria_exp(ts, llvm_file, "", $1, id_atual); 
+        id_atual++;
+        } else if (var_func_proc(ts, $1) == 1) {
+            printf("eh proc\n");
+            //chama procedimento
+        }
+    }
      | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES
      | NUM {$$ = cria_exp(ts, llvm_file, "numero", $1, id_atual); id_atual++;}
      | ABRE_PARENTESES EXPRESSAO FECHA_PARENTESES {$$ = $2;}

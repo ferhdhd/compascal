@@ -24,10 +24,11 @@ nodoID* concatNodo (nodoID *head, char *s, char *tipo_simbolo, int escopo_atual)
     if (head == NULL) {
         head = novoNodo;
     } else {
-        while (head->prox != NULL)
-            head = head->prox;
-        head->prox = novoNodo;
-        novoNodo->prev = head;
+        nodoID *aux = head;
+        while (aux->prox != NULL)
+            aux = aux->prox;
+        aux->prox = novoNodo;
+        novoNodo->prev = aux;
     }
 
     return head;
@@ -211,6 +212,26 @@ exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, cha
     novo_exp->id_temporario = id_atual;
 
     return novo_exp;
+}
+
+// diz se eh variavel(0), procedimento(1), funcao(2) ou tipo nao declarado(99).
+int var_func_proc (nodoID* ts, char *nome) {
+    nodoID* nodo = procuraTabelaSimbolos(ts, nome);
+
+    printf("nome: %s\n" , nome);
+    if (nodo == NULL) {
+        char erro[1000];
+        sprintf(erro, "a variavel %s nao foi declarada anteriormente!\n", nome);
+        yyerror(erro);
+    }
+
+    if (!strcmp("variavel", nodo->tipo_simbolo))
+        return 0;
+    else if (!strcmp("procedure", nodo->tipo_simbolo))
+        return 1;
+    else if (!strcmp("funcao", nodo->tipo_simbolo))
+        return 2;
+    return 99;
 }
 
 

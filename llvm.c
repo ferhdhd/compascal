@@ -42,6 +42,9 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
         nodo = nodo->prox;
     } while (nodo && (!strcmp("parametro", nodo->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->tipo_simbolo)));
     fprintf(fp, ") {\n"); // fim dos parametros
+
+    fprintf(fp, "entry:\n\n"); // define o label do começo da func
+
     // parametros escritos, agora eles precisam ser alocados como ponteiros na funcao em llvm
     // vamos voltar até o primeiro nodo de parâmetro
     printf("tipo-simb: %s\n" , aux->tipo_simbolo);
@@ -120,15 +123,18 @@ void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atu
 
  void armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
     nodoID *aux = procuraTabelaSimbolos(ts, var);
-    if (aux == NULL) {
+    /* if (aux == NULL) {
         char erro[1000];
         sprintf(erro, "a variavel %s nao foi declarada anteriormente!\n", var);
         yyerror(erro);     
-    } else if (!strcmp(aux->tipo, "INTEIRO") && !strcmp(exp->tipo, "REAL")) {
+    } else */if (!strcmp(aux->tipo, "INTEIRO") && !strcmp(exp->tipo, "REAL")) {
         char erro[1000];
         sprintf(erro, "a variavel %s eh do tipo inteiro, enquanto a expressao eh real!\n", var);
         yyerror(erro);  
     }
 
-    fprintf(fp, "store %s %%%d, %%%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
+    if (aux->escopo == 0)
+        fprintf(fp, "store %s %%%d, ptr @%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
+    else
+        fprintf(fp, "store %s %%%d, ptr %%%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
  }

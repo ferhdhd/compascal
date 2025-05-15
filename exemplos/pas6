@@ -1,0 +1,9 @@
+program procedimento (input, output);
+var x,y: integer;
+procedure plus;
+var a,b,c: integer;
+begin
+    c := a + b;
+    plus;
+    write(c)
+end;
