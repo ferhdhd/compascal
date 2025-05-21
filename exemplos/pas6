@@ -1,7 +1,7 @@
 program procedimento (input, output);
 var x,y: integer;
-procedure plus;
-var a,b,c: integer;
+procedure plus(a,b: integer);
+var c: integer;
 begin
     c := a + b;
     plus;

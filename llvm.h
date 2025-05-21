@@ -16,6 +16,9 @@ void emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
 void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual);
 void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
 
+void emiteProcSemPar (FILE *fp, char *proc, nodoID *ts);
+void emiteProcComPar (FILE *fp, char *proc, nodoID *parametros, nodoID *ts);
+
 void armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts);
 
 #endif

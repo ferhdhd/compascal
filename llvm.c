@@ -48,7 +48,8 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
     // parametros escritos, agora eles precisam ser alocados como ponteiros na funcao em llvm
     // vamos voltar até o primeiro nodo de parâmetro
     printf("tipo-simb: %s\n" , aux->tipo_simbolo);
-    while (aux && (!strcmp("parametro", aux->tipo_simbolo) || !strcmp("parametro-ponteiro", aux->tipo_simbolo)))
+    // eh preciso colocar o caso de ser variavel, pois se a funcao nao tiver parametros, a primeira variavel nunca seria escrita no llvm
+    while (aux && (!strcmp("parametro", aux->tipo_simbolo) || !strcmp("parametro-ponteiro", aux->tipo_simbolo)) || !strcmp("variavel", aux->tipo_simbolo))
         aux = aux->prev;
     aux = aux->prox; // apontando para o primeiro parametro
 
@@ -121,13 +122,39 @@ void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atu
     }
  }
 
+void emiteProcSemPar (FILE *fp, char* proc, nodoID* ts) {
+    nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);
+    
+    fprintf(fp, "call %s @%s()\n" , converteTipo(ts_proc->tipo), proc);
+}
+
+void emiteProcComPar (FILE *fp, char *proc, nodoID *parametros, nodoID *ts) {
+    nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);
+    nodoID *par_proc = ts_proc->prox; // primeiro parametro do proc na lista de simbolos
+
+    if ((!strcmp("parametro", par_proc->tipo_simbolo) != 1 || !strcmp("parametro-ponteiro", par_proc->tipo_simbolo) != 1) && !parametros) {
+        
+    }
+    
+    while (!strcmp("parametro-ponteiro", par_proc->tipo_simbolo) || !strcmp("parametro", par_proc->tipo_simbolo)) {
+        if (!strcmp(par_proc->tipo, parametros->tipo) != 1) {
+            char erro[1000];
+            sprintf(erro, "o tipo do parâmetro passado %s é diferente do parâmetro %s declarado!\n", par_proc->nome, parametros->nome);
+            yyerror(erro);       
+        }
+    }
+    
+    fprintf(fp, "call %s @%s(" , converteTipo(ts_proc->tipo), proc);
+    
+}
+
  void armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
     nodoID *aux = procuraTabelaSimbolos(ts, var);
-    /* if (aux == NULL) {
+    if (aux == NULL) {
         char erro[1000];
         sprintf(erro, "a variavel %s nao foi declarada anteriormente!\n", var);
         yyerror(erro);     
-    } else */if (!strcmp(aux->tipo, "INTEIRO") && !strcmp(exp->tipo, "REAL")) {
+    } else if (!strcmp(aux->tipo, "INTEIRO") && !strcmp(exp->tipo, "REAL")) {
         char erro[1000];
         sprintf(erro, "a variavel %s eh do tipo inteiro, enquanto a expressao eh real!\n", var);
         yyerror(erro);  

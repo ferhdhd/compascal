@@ -218,14 +218,14 @@ exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, cha
 int var_func_proc (nodoID* ts, char *nome) {
     nodoID* nodo = procuraTabelaSimbolos(ts, nome);
 
-    printf("nome: %s\n" , nome);
+    printf("nome: %s tipo:%s\n " , nome, nodo->tipo_simbolo);
     if (nodo == NULL) {
         char erro[1000];
         sprintf(erro, "a variavel %s nao foi declarada anteriormente!\n", nome);
         yyerror(erro);
     }
 
-    if (!strcmp("variavel", nodo->tipo_simbolo))
+    if ((!strcmp("variavel", nodo->tipo_simbolo) || !strcmp("parametro", nodo->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->tipo_simbolo)))
         return 0;
     else if (!strcmp("procedure", nodo->tipo_simbolo))
         return 1;

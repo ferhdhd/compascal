@@ -11,6 +11,7 @@
     int id_atual = 0;
 
     nodoID *ts = NULL;
+    nodoID *lista_exp = NULL;
 
     FILE *llvm_file;
 
@@ -106,7 +107,7 @@ ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {armazenaVar(llvm_file, $1, $3
 VARIAVEL: ID 
         ;
 
-CHAMADA_DE_PROCEDIMENTO: ID
+CHAMADA_DE_PROCEDIMENTO: ID {emiteProc(llvm_file, $1, ts);}
                     | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES
                     ;
 
@@ -141,15 +142,15 @@ TERMO: FATOR
 FATOR: ID 
     {
         if (var_func_proc(ts, $1) == 0) {
-        printf("eh var\n");
-        $$ = cria_exp(ts, llvm_file, "", $1, id_atual); 
-        id_atual++;
+            printf("%s: eh var\n" , $1);
+            $$ = cria_exp(ts, llvm_file, "", $1, id_atual); 
+            id_atual++;
         } else if (var_func_proc(ts, $1) == 1) {
             printf("eh proc\n");
-            //chama procedimento
+            emiteProcSemPar(llvm_file, $1, ts);
         }
     }
-     | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES
+     | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {emiteProcComPar(llvm_file, $1, $3, ts);}
      | NUM {$$ = cria_exp(ts, llvm_file, "numero", $1, id_atual); id_atual++;}
      | ABRE_PARENTESES EXPRESSAO FECHA_PARENTESES {$$ = $2;}
      ;
