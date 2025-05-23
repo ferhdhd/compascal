@@ -17,8 +17,10 @@ void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atu
 void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
 
 void emiteProcSemPar (FILE *fp, char *proc, nodoID *ts);
-void emiteProcComPar (FILE *fp, char *proc, nodoID *parametros, nodoID *ts);
+void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts);
 
-void armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts);
+void emiteErroRetorno(nodoID *ts);
+
+int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts);
 
 #endif

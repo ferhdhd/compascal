@@ -9,7 +9,9 @@
 
     int escopo_atual = 0;
     int id_atual = 0;
+    int func_tem_retorno = 0;
 
+    nodoID *retorno = NULL;
     nodoID *ts = NULL;
     nodoID *lista_exp = NULL;
 
@@ -37,7 +39,7 @@
 %type <tipo> TIPO
 %type <exp> FATOR
 %type <exp> TERMO
-// %type <exp> LISTA_DE_EXPRESSOES
+%type <exp> LISTA_DE_EXPRESSOES
 %type <exp> EXPRESSAO
 %type <exp> EXPRESSAO_SIMPLES
 %type <str> VARIAVEL
@@ -69,10 +71,10 @@ DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRA
                            | /* empty */
                            ;
 
-DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {fprintf(llvm_file, "\n}\n"); escopo_atual--; id_atual = 0;}
+DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno > 0) emiteErroRetorno(ts); fprintf(llvm_file, "\n}\n"); escopo_atual--; func_tem_retorno = 0; id_atual = 0;}
                          ;
 
-CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++;} ARGUMENTOS DOIS_PONTOS TIPO {setTipo($1, $6);} PONTO_VIRGULA 
+CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++; retorno = concatNodo(NULL, $2, "retorno", escopo_atual); ts = attTabelaSimbolos(ts, retorno);} ARGUMENTOS DOIS_PONTOS TIPO {setTipoUm($1, $6); setTipoUm(retorno, $6);} PONTO_VIRGULA 
                         | PROCEDURE ID {$1 = concatNodo(NULL, $2, "procedure", escopo_atual); setTipo($1, "VOID"); ts = attTabelaSimbolos(ts, $1); escopo_atual++;} ARGUMENTOS PONTO_VIRGULA 
                         ;
 
@@ -97,7 +99,7 @@ LISTA_DE_ENUNCIADOS: ENUNCIADO
                    | LISTA_DE_ENUNCIADOS PONTO_VIRGULA ENUNCIADO
                    ;
 
-ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {armazenaVar(llvm_file, $1, $3, ts);}
+ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {func_tem_retorno += armazenaVar(llvm_file, $1, $3, ts);}
          | CHAMADA_DE_PROCEDIMENTO
          | ENUNCIADO_COMPOSTO
          | IF EXPRESSAO THEN ENUNCIADO ELSE ENUNCIADO
@@ -107,19 +109,19 @@ ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {armazenaVar(llvm_file, $1, $3
 VARIAVEL: ID 
         ;
 
-CHAMADA_DE_PROCEDIMENTO: ID {emiteProc(llvm_file, $1, ts);}
-                    | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES
+CHAMADA_DE_PROCEDIMENTO: ID {emiteProcSemPar(llvm_file, $1, ts);}
+                    | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {emiteProcComPar(llvm_file, $1, $3, ts);}
                     ;
 
-LISTA_DE_EXPRESSOES: EXPRESSAO
-                   | LISTA_DE_EXPRESSOES VIRGULA EXPRESSAO
+LISTA_DE_EXPRESSOES: EXPRESSAO {$$ = cria_exp_lista_parametros(NULL, $1);}
+                   | LISTA_DE_EXPRESSOES VIRGULA EXPRESSAO {$$ = cria_exp_lista_parametros($1, $3);}
                    ;
 
 EXPRESSAO: EXPRESSAO_SIMPLES {$$ = $1;}
          | EXPRESSAO_SIMPLES OPERADOR_RELACIONAL EXPRESSAO_SIMPLES
          ;
 
-EXPRESSAO_SIMPLES: TERMO
+EXPRESSAO_SIMPLES: TERMO {$$ = $1;}
                  | SINAL TERMO  
                  | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES 
                  {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
@@ -135,7 +137,7 @@ EXPRESSAO_SIMPLES: TERMO
                  id_atual++;}
                  ;
 
-TERMO: FATOR
+TERMO: FATOR {$$ = $1;}
      | TERMO OPERADOR_MULTIPLICATIVO FATOR {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual); emiteOpMult(llvm_file, $1, $3, $2, id_atual); id_atual++;}
      ;
 
@@ -150,7 +152,7 @@ FATOR: ID
             emiteProcSemPar(llvm_file, $1, ts);
         }
     }
-     | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {emiteProcComPar(llvm_file, $1, $3, ts);}
+     | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {printf("oi"); emiteProcComPar(llvm_file, $1, $3, ts);}
      | NUM {$$ = cria_exp(ts, llvm_file, "numero", $1, id_atual); id_atual++;}
      | ABRE_PARENTESES EXPRESSAO FECHA_PARENTESES {$$ = $2;}
      ;

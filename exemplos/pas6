@@ -1,9 +1,9 @@
 program procedimento (input, output);
 var x,y: integer;
-procedure plus(a,b: integer);
+function plus(a,b: integer) : integer;
 var c: integer;
 begin
     c := a + b;
-    plus;
-    write(c)
+    c := plus(c, 3);
+    plus := c
 end;

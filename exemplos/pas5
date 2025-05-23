@@ -1,7 +1,7 @@
 program simples (input, output);
 var x,y: integer;
 var z: real;
-function plus (a,b: integer): integer;
+procedure plus (a,b: integer);
 var p,l,m: integer;
 begin
     z := 4 * (b  + 2.5 * 5)

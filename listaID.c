@@ -42,6 +42,10 @@ void setTipo (nodoID* head, char* tipo) {
     }
 }
 
+void setTipoUm (nodoID* head, char* tipo) {
+    strcpy(head->tipo, tipo);
+}
+
 void setTipoSimb (nodoID* head, char* tipo_simbolo) {
     printf("Setando Tipo Símbolo: %s\n" , tipo_simbolo);
     while (head) {
@@ -153,6 +157,8 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
     strcpy(novo_exp->tipo_simbolo, tipo_simbolo); //primeiramente sao definidos vazios se ja existem em outro momento
     strcpy(novo_exp->nome, nome);                 // como variaveis ja declaradas
 
+    novo_exp->prox = NULL; // campo q serve apenas para verificar as funcoes
+
     if (!strcmp(novo_exp->tipo_simbolo, "numero")) {
         novo_exp->nodo_tabela = NULL;
         
@@ -180,7 +186,6 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
         emiteVar(fp, novo_exp, id_atual);
         
         novo_exp->id_temporario = id_atual;
-
     }
 
     return novo_exp;
@@ -210,8 +215,22 @@ exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, cha
     }
 
     novo_exp->id_temporario = id_atual;
+    novo_exp->prox = NULL; // campo q serve apenas para verificar as funcoes
 
     return novo_exp;
+}
+
+exp_t* cria_exp_lista_parametros(exp_t* raiz, exp_t* nova) {
+    exp_t* raiz_aux = raiz;
+    if (raiz) {
+        while (raiz->prox)
+            raiz = raiz->prox;
+        raiz->prox = nova;
+
+        return raiz_aux;
+    } else {
+        return nova;
+    }
 }
 
 // diz se eh variavel(0), procedimento(1), funcao(2) ou tipo nao declarado(99).

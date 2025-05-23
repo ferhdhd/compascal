@@ -34,7 +34,7 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
             fprintf(fp, "%s_t", nodo->nome);
         }
         
-        if (nodo->prox && (!strcmp("parametro", nodo->prox->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->prox->tipo_simbolo))) {
+        if (strcmp("retorno", nodo->tipo_simbolo) && nodo->prox && (!strcmp("parametro", nodo->prox->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->prox->tipo_simbolo))) {
             fprintf(fp, ", "); // na primeira iteracao, nao coloca virgula
         }
 
@@ -49,7 +49,7 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
     // vamos voltar até o primeiro nodo de parâmetro
     printf("tipo-simb: %s\n" , aux->tipo_simbolo);
     // eh preciso colocar o caso de ser variavel, pois se a funcao nao tiver parametros, a primeira variavel nunca seria escrita no llvm
-    while (aux && (!strcmp("parametro", aux->tipo_simbolo) || !strcmp("parametro-ponteiro", aux->tipo_simbolo)) || !strcmp("variavel", aux->tipo_simbolo))
+    while (aux && (!strcmp("parametro", aux->tipo_simbolo) || !strcmp("parametro-ponteiro", aux->tipo_simbolo)) || !strcmp("variavel", aux->tipo_simbolo) || !strcmp("retorno", aux->tipo_simbolo))
         aux = aux->prev;
     aux = aux->prox; // apontando para o primeiro parametro
 
@@ -57,7 +57,7 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
         if (!strcmp("parametro", aux->tipo_simbolo)) {
             fprintf(fp, "%%%s = alloca %s\n", aux->nome, converteTipo(aux->tipo));
             fprintf(fp, "store %s %%%s_t, ptr %%%s\n", converteTipo(aux->tipo), aux->nome, aux->nome);
-        } else if (!strcmp("variavel", aux->tipo_simbolo)) {
+        } else if (!strcmp("variavel", aux->tipo_simbolo) || !strcmp("retorno", aux->tipo_simbolo)) {
             fprintf(fp, "%%%s = alloca %s\n", aux->nome, converteTipo(aux->tipo));
         }
         aux = aux->prox;
@@ -110,7 +110,7 @@ void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
 void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual) {
     if (!strcmp("*", op)) {
         if (!strcmp("REAL", exp_esq->tipo))
-            fprintf(fp, "%%%d = mul %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+            fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
         else
             fprintf(fp, "%%%d = mul %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     } else if (!strcmp("div", op)) {
@@ -124,31 +124,76 @@ void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atu
 
 void emiteProcSemPar (FILE *fp, char* proc, nodoID* ts) {
     nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);
+
+    if (!ts_proc) {
+        char erro[1000];
+        sprintf(erro, "A função não foi declarada anteriormente!\n");
+        yyerror(erro);    
+    }
     
     fprintf(fp, "call %s @%s()\n" , converteTipo(ts_proc->tipo), proc);
 }
 
-void emiteProcComPar (FILE *fp, char *proc, nodoID *parametros, nodoID *ts) {
+void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
     nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);
-    nodoID *par_proc = ts_proc->prox; // primeiro parametro do proc na lista de simbolos
 
-    if ((!strcmp("parametro", par_proc->tipo_simbolo) != 1 || !strcmp("parametro-ponteiro", par_proc->tipo_simbolo) != 1) && !parametros) {
-        
+    if (!ts_proc) {
+        char erro[1000];
+        sprintf(erro, "A função não foi declarada anteriormente!\n");
+        yyerror(erro);    
     }
+
+    nodoID *par_proc = ts_proc->prox; // primeiro parametro do proc na lista de simbolos
     
-    while (!strcmp("parametro-ponteiro", par_proc->tipo_simbolo) || !strcmp("parametro", par_proc->tipo_simbolo)) {
-        if (!strcmp(par_proc->tipo, parametros->tipo) != 1) {
-            char erro[1000];
-            sprintf(erro, "o tipo do parâmetro passado %s é diferente do parâmetro %s declarado!\n", par_proc->nome, parametros->nome);
-            yyerror(erro);       
-        }
+    if (((strcmp("parametro", par_proc->tipo_simbolo)) && strcmp("parametro-ponteiro", par_proc->tipo_simbolo)) && parametros) {
+        char erro[1000];
+        sprintf(erro, "Uma função que não tem parâmetros em sua declaração foi chamada com parâmetros!\n");
+        yyerror(erro);       
     }
     
     fprintf(fp, "call %s @%s(" , converteTipo(ts_proc->tipo), proc);
+
+    while (!strcmp("parametro-ponteiro", par_proc->tipo_simbolo) || !strcmp("parametro", par_proc->tipo_simbolo)) {
+        printf("par_proc_tipo: %s\n" , par_proc->tipo_simbolo);
+        printf("parametro_tipo: %s\n" , par_proc->tipo_simbolo);
+        
+        if (parametros == NULL) {
+            char erro[1000];
+            sprintf(erro, "A função espera mais parâmetros, além dos que foram delcarados!\n");
+            yyerror(erro);       
+        }
+        
+        if (!strcmp(par_proc->tipo, parametros->tipo) != 1) {
+            char erro[1200];
+            sprintf(erro, "o tipo do parâmetro passado %s é diferente do parâmetro %s declarado!\n", par_proc->nome, parametros->nome);
+            yyerror(erro);       
+        }
+
+        fprintf(fp, "%%%d", parametros->id_temporario);
+        
+        if (parametros->prox) // se tiver mais parametros, printa a virgula
+            fprintf(fp, ",");
+        
+        par_proc = par_proc->prox;
+        parametros = parametros->prox;
+    }
     
+    fprintf(fp, ")\n");
+    
+    return;
 }
 
- void armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
+void emiteErroRetorno(nodoID *ts) {
+    while (strcmp("funcao", ts->tipo_simbolo))
+        ts = ts->prev;
+    
+    char erro[1000];
+    sprintf(erro, "Função %s não tem retorno!\n" , ts->nome);
+    yyerror(erro);   
+}
+
+int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
+    int eh_retorno = 0;
     nodoID *aux = procuraTabelaSimbolos(ts, var);
     if (aux == NULL) {
         char erro[1000];
@@ -160,8 +205,13 @@ void emiteProcComPar (FILE *fp, char *proc, nodoID *parametros, nodoID *ts) {
         yyerror(erro);  
     }
 
+    if (!strcmp("retorno", aux->tipo_simbolo))
+        eh_retorno = 1;
+
     if (aux->escopo == 0)
         fprintf(fp, "store %s %%%d, ptr @%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
     else
         fprintf(fp, "store %s %%%d, ptr %%%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
+
+    return eh_retorno;
  }
