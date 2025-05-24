@@ -18,6 +18,7 @@ void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
 
 void emiteProcSemPar (FILE *fp, char *proc, nodoID *ts);
 void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts);
+void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, int id_atual);
 
 void emiteErroRetorno(nodoID *ts);
 

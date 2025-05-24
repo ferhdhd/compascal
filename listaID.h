@@ -30,6 +30,7 @@ nodoID* attTabelaSimbolos (nodoID* head, nodoID* aux);
 void printTs (nodoID* ts);
 nodoID* simboloExisteTabela (nodoID* ts,nodoID *novaLista);
 nodoID* procuraTabelaSimbolos (nodoID* ts, char *nome);
+nodoID* procuraTabelaSimbolosFunc (nodoID* ts, char *nome, char *tipo_simbolo);
 int destroiLista (nodoID *head);
 nodoID* destroiLocais (nodoID *head);
 int ehFloat (char* num);

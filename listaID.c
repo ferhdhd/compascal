@@ -111,6 +111,16 @@ nodoID* procuraTabelaSimbolos (nodoID* ts, char *nome) {
     return NULL;
 }
 
+nodoID* procuraTabelaSimbolosFunc (nodoID* ts, char *nome, char *tipo_simbolo) {
+    while (ts) {
+        if (!strcmp(ts->nome, nome) && !strcmp(ts->tipo_simbolo, tipo_simbolo))
+            return ts;
+        ts = ts->prev;
+    }
+
+    return NULL;
+}
+
 int destroiLista (nodoID *head) {
     printf("Destruindo lista\n");
     
@@ -172,6 +182,18 @@ exp_t* cria_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, char *nome, int id_atu
         emiteNumero(fp, novo_exp, id_atual);
         novo_exp->id_temporario = id_atual;
         printf("EXP: %s, id_temp: %d\n", novo_exp->nome, novo_exp->id_temporario);
+    } else if (!strcmp(novo_exp->tipo_simbolo, "funcao")){
+        novo_exp->nodo_tabela = procuraTabelaSimbolosFunc(ts, nome, tipo_simbolo);
+
+        if (!novo_exp->nodo_tabela) {
+            char erro[1000];
+            sprintf(erro, "simbolo '%s' nao declarado anteriormente", nome);
+            yyerror(erro);
+        }
+        strcpy(novo_exp->tipo, novo_exp->nodo_tabela->tipo);
+        strcpy(novo_exp->tipo_simbolo, tipo_simbolo);
+        novo_exp->id_temporario = id_atual;
+
     } else {
         novo_exp->nodo_tabela = procuraTabelaSimbolos(ts, nome);
 

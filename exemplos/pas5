@@ -4,5 +4,5 @@ var z: real;
 procedure plus (a,b: integer);
 var p,l,m: integer;
 begin
-    z := 4 * (b  + 2.5 * 5)
+    z := 4 * (b + 2.5 * 5)
 end;

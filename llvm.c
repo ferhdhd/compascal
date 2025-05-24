@@ -82,7 +82,11 @@ void emiteNumero(FILE *fp, exp_t *novo_exp, int id_atual) {
 }
 
 void emiteVar(FILE *fp, exp_t *novo_exp, int id_atual) {
-    fprintf(fp, "%%%d = load %s, ptr %s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
+    if (novo_exp->nodo_tabela->escopo)
+        fprintf(fp, "%%%d = load %s, ptr %%%s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
+    else
+        fprintf(fp, "%%%d = load %s, ptr @%s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
+    
 }
 
 void emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
@@ -183,6 +187,57 @@ void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
     return;
 }
 
+void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, int id_atual) {
+    nodoID *ts_func = procuraTabelaSimbolosFunc(ts, funcao->nome, "funcao");
+
+    if (!ts_func) {
+        char erro[1000];
+        sprintf(erro, "A função não foi declarada anteriormente!\n");
+        yyerror(erro);    
+    }
+
+    nodoID *par_func = ts_func->prox->prox; // primeiro parametro do proc na lista de simbolos
+    
+    if (((strcmp("parametro", par_func->tipo_simbolo)) && strcmp("parametro-ponteiro", par_func->tipo_simbolo)) && parametros) {
+        char erro[1000];
+        sprintf(erro, "Uma função que não tem parâmetros em sua declaração foi chamada com parâmetros!\n");
+        yyerror(erro);       
+    }
+    
+    fprintf(fp, "%%%d := call %s @%s(" , id_atual, converteTipo(ts_func->tipo), funcao->nome);
+
+    while (!strcmp("parametro-ponteiro", par_func->tipo_simbolo) || !strcmp("parametro", par_func->tipo_simbolo)) {
+        printf("par_func_tipo: %s\n" , par_func->tipo_simbolo);
+        printf("parametro_tipo: %s\n" , par_func->tipo_simbolo);
+        
+        if (parametros == NULL) {
+            char erro[1000];
+            sprintf(erro, "A função espera mais parâmetros, além dos que foram delcarados!\n");
+            yyerror(erro);       
+        }
+        
+        if (!strcmp(par_func->tipo, parametros->tipo) != 1) {
+            char erro[1200];
+            sprintf(erro, "o tipo do parâmetro passado %s é diferente do parâmetro %s declarado!\n", par_func->nome, parametros->nome);
+            yyerror(erro);       
+        }
+
+        fprintf(fp, "%%%d", parametros->id_temporario);
+        
+        if (parametros->prox) // se tiver mais parametros, printa a virgula
+            fprintf(fp, ",");
+        
+        par_func = par_func->prox;
+        parametros = parametros->prox;
+    }
+    
+    fprintf(fp, ")\n");
+    
+    return;
+}
+
+
+
 void emiteErroRetorno(nodoID *ts) {
     while (strcmp("funcao", ts->tipo_simbolo))
         ts = ts->prev;
@@ -207,6 +262,8 @@ int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
 
     if (!strcmp("retorno", aux->tipo_simbolo))
         eh_retorno = 1;
+    
+    printf("tipo simobolo armazena var: %s\n", aux->tipo_simbolo);
 
     if (aux->escopo == 0)
         fprintf(fp, "store %s %%%d, ptr @%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);

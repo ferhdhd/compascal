@@ -4,6 +4,7 @@ function plus(a,b: integer) : integer;
 var c: integer;
 begin
     c := a + b;
-    c := plus(c, 3);
-    plus := c
+    x := plus(c, 3);
+    plus := x;
+    c := a
 end;
