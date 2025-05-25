@@ -74,7 +74,8 @@ char *converteTipo (char* tipo) {
         return "float";
     else if (!strcmp(tipo, "VOID"))
         return "void";
-    
+    else if (!strcmp(tipo, "1-BIT"))
+        return "i1";
 }
 
 void emiteNumero(FILE *fp, exp_t *novo_exp, int id_atual) {
@@ -125,6 +126,25 @@ void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atu
         fprintf(fp, "%%%d = and %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     }
  }
+
+void emiteComparacao(FILE *fp, exp_t *esq, char *comparacao, exp_t *dir, int id_atual) {
+    fprintf(fp, "%%%d = icmp ", id_atual);
+
+    if (!strcmp(">", comparacao))
+        fprintf(fp, "sgt");
+    else if (!strcmp(">=", comparacao))
+        fprintf(fp, "sge");
+    else if (!strcmp("<", comparacao))
+        fprintf(fp, "slt");
+    else if (!strcmp("<=", comparacao))
+        fprintf(fp, "sle");
+    else if (!strcmp("=", comparacao))
+        fprintf(fp, "eq");
+    else if (!strcmp("<>", comparacao))
+        fprintf(fp, "ne");
+    
+    fprintf(fp, " %s %%%d, %%%d\n", converteTipo(esq->tipo), esq->id_temporario, dir->id_temporario);
+}
 
 void emiteProcSemPar (FILE *fp, char* proc, nodoID* ts) {
     nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);

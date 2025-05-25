@@ -21,7 +21,9 @@ ID [a-zA-Z][a-zA-Z1-9]*
 "or" { return OR; }
 "-" { return MENOS; }
 "+" { return MAIS; }
-"="|"<>"|">"|">="|"<"|"<=" { return OPERADOR_RELACIONAL; }
+"="|"<>"|">"|">="|"<"|"<=" { 
+    yylval.str = strdup(yytext);
+    return OPERADOR_RELACIONAL; }
 ":=" { return OPERADOR_ATRIBUICAO; }
 "do" { return DO; }
 "while" { return WHILE; }

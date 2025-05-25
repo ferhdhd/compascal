@@ -1,0 +1,11 @@
+program ifSimples (input,output);
+var
+   a,b: integer;
+begin
+   a := 5;
+   if a > 0
+   then
+       a := a + 5
+   else
+       a := a + 50;
+end.

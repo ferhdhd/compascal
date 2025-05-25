@@ -255,6 +255,25 @@ exp_t* cria_exp_lista_parametros(exp_t* raiz, exp_t* nova) {
     }
 }
 
+exp_t* cria_exp_comparacao(exp_t *esq, char *op, exp_t *dir, int id_atual) {
+    if (strcmp(esq->tipo, dir->tipo)) {
+        char erro[1000];
+        sprintf(erro, "As expressões da comparação tem tipos diferentes!\n");
+        yyerror(erro);
+    }
+
+    exp_t *novo_exp = malloc(sizeof(exp_t));
+    novo_exp->id_temporario = id_atual;
+    novo_exp->nodo_tabela = NULL;
+    strcpy(novo_exp->nome, "exp");
+    novo_exp->prox = NULL;
+    strcpy(novo_exp->tipo, "1-BIT");
+    strcpy(novo_exp->tipo_simbolo, "comparacao");
+
+    return novo_exp;
+}
+
+
 // diz se eh variavel(0), procedimento(1), funcao(2) ou tipo nao declarado(99).
 int var_func_proc (nodoID* ts, char *nome) {
     nodoID* nodo = procuraTabelaSimbolos(ts, nome);
