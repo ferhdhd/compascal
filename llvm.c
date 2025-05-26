@@ -146,6 +146,33 @@ void emiteComparacao(FILE *fp, exp_t *esq, char *comparacao, exp_t *dir, int id_
     fprintf(fp, " %s %%%d, %%%d\n", converteTipo(esq->tipo), esq->id_temporario, dir->id_temporario);
 }
 
+void emiteComecoIf(FILE *fp, exp_t *exp, int cont_if) {
+    if (strcmp(exp->tipo, "1-BIT")) {
+        char erro[1000];
+        sprintf(erro, "Expressão incompatível com a declaração do IF!\n");
+        yyerror(erro); 
+    }
+
+    fprintf(fp, "br i1 %%%d, label %%then_%d, label %%else_%d\n", exp->id_temporario, cont_if, cont_if);
+    fprintf(fp, "then_%d:\n", cont_if);
+}
+
+void emiteFimThen(FILE *fp, int cont_if) {
+    fprintf(fp, "br label %%end_if_%d\n", cont_if);
+    fprintf(fp, "else_%d:\n", cont_if);
+}
+
+void emiteFimElse(FILE *fp, int cont_if) {
+    fprintf(fp, "br label %%end_if_%d\n", cont_if);
+    fprintf(fp, "end_if_%d:\n", cont_if);
+}
+
+
+void emiteMain (FILE *fp) {
+    fprintf(fp, "\ndefine i32 @main() {\n");
+    fprintf(fp, "entry:\n");
+}
+
 void emiteProcSemPar (FILE *fp, char* proc, nodoID* ts) {
     nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);
 

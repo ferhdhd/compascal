@@ -10,6 +10,7 @@
     int escopo_atual = 0;
     int id_atual = 0;
     int func_tem_retorno = 0;
+    int cont_if = 0;
 
     nodoID *retorno = NULL;
     nodoID *ts = NULL;
@@ -54,7 +55,7 @@ PROGRAMA: PROGRAM ID ABRE_PARENTESES LISTA_DE_IDENTIFICADORES {destroiLista($4);
         DECLARACOES {printTs(ts); emiteGlobal(llvm_file, ts);}
         DECLARACOES_DE_SUBPROGRAMAS {printTs(ts);}
         ENUNCIADO_COMPOSTO 
-        PONTO_FINAL
+        PONTO_FINAL {fprintf(llvm_file, "ret i32 0\n}");}
         ;
 
 LISTA_DE_IDENTIFICADORES: ID {$$ = concatNodo(NULL, $1, "variavel", escopo_atual);}
@@ -73,7 +74,7 @@ DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRA
                            | /* empty */
                            ;
 
-DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); fprintf(llvm_file, "\n}\n"); escopo_atual--; func_tem_retorno = 0; id_atual = 0;}
+DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); fprintf(llvm_file, "\n}\n"); escopo_atual--; func_tem_retorno = 0; id_atual = 0; cont_if = 0;}
                          ;
 
 CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++; retorno = concatNodo(NULL, $2, "retorno", escopo_atual); ts = attTabelaSimbolos(ts, retorno);} ARGUMENTOS DOIS_PONTOS TIPO {setTipoUm($1, $6); setTipoUm(retorno, $6);} PONTO_VIRGULA 
@@ -90,7 +91,7 @@ LISTA_DE_PARAMETROS: LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($1, $3);
                    | LISTA_DE_PARAMETROS PONTO_VIRGULA VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($4, $6); setTipo($4, "parametro-ponteiro"); ts = attTabelaSimbolos(ts, $4);} 
                    ;
 
-ENUNCIADO_COMPOSTO: BEGIN_TOKEN {printf("oi\n");} ENUNCIADOS_OPCIONAIS END
+ENUNCIADO_COMPOSTO: BEGIN_TOKEN {emiteMain(llvm_file);} ENUNCIADOS_OPCIONAIS END
                   ;
 
 ENUNCIADOS_OPCIONAIS: LISTA_DE_ENUNCIADOS
@@ -104,7 +105,7 @@ LISTA_DE_ENUNCIADOS: ENUNCIADO
 ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {func_tem_retorno += armazenaVar(llvm_file, $1, $3, ts);}
          | CHAMADA_DE_PROCEDIMENTO
          | ENUNCIADO_COMPOSTO
-         | IF EXPRESSAO THEN ENUNCIADO ELSE ENUNCIADO
+         | IF EXPRESSAO {emiteComecoIf(llvm_file, $2, ++cont_if);} THEN ENUNCIADO {emiteFimThen(llvm_file, cont_if);} ELSE ENUNCIADO {emiteFimElse(llvm_file, cont_if); cont_if--;}
          | WHILE EXPRESSAO DO ENUNCIADO 
          |
          ;

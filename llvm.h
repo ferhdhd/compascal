@@ -15,8 +15,13 @@ void emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
 void emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
 void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual);
 void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
-void emiteComparacao(FILE *fp, exp_t *esq, char *comparacao, exp_t *dir, int id_atual);
 
+void emiteComparacao(FILE *fp, exp_t *esq, char *comparacao, exp_t *dir, int id_atual);
+void emiteComecoIf(FILE *fp, exp_t *exp, int cont_if);
+void emiteFimThen(FILE *fp, int cont_if);
+void emiteFimElse(FILE *fp, int cont_if);
+
+void emiteMain (FILE *fp);
 void emiteProcSemPar (FILE *fp, char *proc, nodoID *ts);
 void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts);
 void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, int id_atual);
