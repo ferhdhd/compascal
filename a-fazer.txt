@@ -1,0 +1,5 @@
+- implementar o while
+- fazer ponteiros funcionarem nos parametros das funções
+- conversao de tipos (int para float e tudo mais)
+- implementar read e write
+- implementar MENOS NUMERO //feito

@@ -1,0 +1,14 @@
+program IfAninhado(input,output);
+var
+  x, y: integer;
+begin
+  x := 10;
+  y := -5;
+  if x > 0 then
+    if y > 0 then
+      x := x + y
+    else
+      x := x - y
+  else
+    x := 0;
+end.

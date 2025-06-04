@@ -19,8 +19,12 @@ ID [a-zA-Z][a-zA-Z1-9]*
     yylval.str = strdup(yytext);
     return OPERADOR_MULTIPLICATIVO; }
 "or" { return OR; }
-"-" { return MENOS; }
-"+" { return MAIS; }
+"-" { 
+    yylval.str = strdup(yytext);
+    return MENOS; }
+"+" { 
+    yylval.str = strdup(yytext);
+    return MAIS; }
 "="|"<>"|">"|">="|"<"|"<=" { 
     yylval.str = strdup(yytext);
     return OPERADOR_RELACIONAL; }

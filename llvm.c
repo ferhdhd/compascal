@@ -111,6 +111,12 @@ void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
         fprintf(fp, "%%%d = or %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
 }
 
+void emiteMudancaSinal (FILE *fp, exp_t *exp, int id_atual) {
+    if (!strcmp("REAL", exp->tipo))
+        fprintf(fp, "%%%d = fmul %s %%%d, -1\n", id_atual, converteTipo(exp->tipo), exp->id_temporario);
+    else
+        fprintf(fp, "%%%d = mul %s %%%d, -1\n", id_atual, converteTipo(exp->tipo), exp->id_temporario);
+}
 
 void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual) {
     if (!strcmp("*", op)) {

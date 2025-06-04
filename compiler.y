@@ -1,6 +1,7 @@
 %{
     #include <stdio.h>
     #include <stdlib.h>
+    #include <string.h>
     #include "listaID.h"
     #include "llvm.h"
     void yyerror(const char *s);    
@@ -11,6 +12,7 @@
     int id_atual = 0;
     int func_tem_retorno = 0;
     int cont_if = 0;
+    int cont_while = 0;
 
     nodoID *retorno = NULL;
     nodoID *ts = NULL;
@@ -27,12 +29,14 @@
     char *tipo;
     nodoID *lID;
     exp_t *exp;
+    int numero;
 }
 
 %token <str> NUM <str> ID <str> OPERADOR_MULTIPLICATIVO <str> MAIS <str> MENOS <str> OR
 %token <lID> FUNCTION PROCEDURE
 %token <str> OPERADOR_RELACIONAL  
-%token OPERADOR_ATRIBUICAO DO WHILE ELSE THEN IF END BEGIN_TOKEN
+%token <numero> IF <numero> WHILE
+%token OPERADOR_ATRIBUICAO DO ELSE THEN END BEGIN_TOKEN
 %token DOIS_PONTOS PONTO_VIRGULA FECHA_PARENTESES ABRE_PARENTESES
 %token REAL INTEIRO VAR PONTO_FINAL PROGRAM VIRGULA
 
@@ -105,8 +109,8 @@ LISTA_DE_ENUNCIADOS: ENUNCIADO
 ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {func_tem_retorno += armazenaVar(llvm_file, $1, $3, ts);}
          | CHAMADA_DE_PROCEDIMENTO
          | ENUNCIADO_COMPOSTO
-         | IF EXPRESSAO {emiteComecoIf(llvm_file, $2, ++cont_if);} THEN ENUNCIADO {emiteFimThen(llvm_file, cont_if);} ELSE ENUNCIADO {emiteFimElse(llvm_file, cont_if); cont_if--;}
-         | WHILE EXPRESSAO DO ENUNCIADO 
+         | IF EXPRESSAO {emiteComecoIf(llvm_file, $2, ++cont_if); $1 = cont_if;} THEN ENUNCIADO {emiteFimThen(llvm_file, $1);} ELSE ENUNCIADO {emiteFimElse(llvm_file, $1);}
+         | WHILE EXPRESSAO DO {emiteComecoWhile(llvm_file, $2, ++cont_while; $1 = cont_while);} ENUNCIADO 
          |
          ;
 
@@ -126,7 +130,13 @@ EXPRESSAO: EXPRESSAO_SIMPLES {$$ = $1;}
          ;
 
 EXPRESSAO_SIMPLES: TERMO {$$ = $1;}
-                 | SINAL TERMO  
+                 | SINAL TERMO {
+                    if (!strcmp("-", $1)) {
+                        emiteMudancaSinal(llvm_file, $2, id_atual++);
+                        $2->id_temporario = id_atual-1;
+                    }
+                    $$ = $2;
+                 }
                  | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES 
                  {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
                  emiteSoma(llvm_file, $1, $3, id_atual); 
