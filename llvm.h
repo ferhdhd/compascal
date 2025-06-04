@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include "listaID.h"
 
+void emiteReadWrite(FILE *fp);
+
 void emiteGlobal (FILE* fp, nodoID* nodo);
 void emiteFunc (FILE* fp, nodoID* nodo);
 nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo);
@@ -23,9 +25,14 @@ void emiteComecoIf(FILE *fp, exp_t *exp, int cont_if);
 void emiteFimThen(FILE *fp, int cont_if);
 void emiteFimElse(FILE *fp, int cont_if);
 
+void emiteComecoWhile(FILE *fp, int cont_while);
+void emiteDoWhile(FILE *fp, exp_t *exp, int cont_while);
+void emiteFimWhile(FILE *fp, int cont_while);
+
 void emiteMain (FILE *fp);
 void emiteProcSemPar (FILE *fp, char *proc, nodoID *ts);
-void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts);
+void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts, int *id_atual);
+void emiteWrite(FILE *fp, exp_t *parametros, nodoID *ts, int *id_atual);
 void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, int id_atual);
 
 void emiteErroRetorno(nodoID *ts);

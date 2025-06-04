@@ -56,8 +56,8 @@
 %%
 
 PROGRAMA: PROGRAM ID ABRE_PARENTESES LISTA_DE_IDENTIFICADORES {destroiLista($4);} FECHA_PARENTESES PONTO_VIRGULA
-        DECLARACOES {printTs(ts); emiteGlobal(llvm_file, ts);}
-        DECLARACOES_DE_SUBPROGRAMAS {printTs(ts);}
+        DECLARACOES {printTs(ts); emiteReadWrite(llvm_file); emiteGlobal(llvm_file, ts);}
+        DECLARACOES_DE_SUBPROGRAMAS {printTs(ts); emiteMain(llvm_file);}
         ENUNCIADO_COMPOSTO 
         PONTO_FINAL {fprintf(llvm_file, "ret i32 0\n}");}
         ;
@@ -95,7 +95,7 @@ LISTA_DE_PARAMETROS: LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($1, $3);
                    | LISTA_DE_PARAMETROS PONTO_VIRGULA VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($4, $6); setTipo($4, "parametro-ponteiro"); ts = attTabelaSimbolos(ts, $4);} 
                    ;
 
-ENUNCIADO_COMPOSTO: BEGIN_TOKEN {emiteMain(llvm_file);} ENUNCIADOS_OPCIONAIS END
+ENUNCIADO_COMPOSTO: BEGIN_TOKEN ENUNCIADOS_OPCIONAIS END
                   ;
 
 ENUNCIADOS_OPCIONAIS: LISTA_DE_ENUNCIADOS
@@ -110,7 +110,7 @@ ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {func_tem_retorno += armazenaV
          | CHAMADA_DE_PROCEDIMENTO
          | ENUNCIADO_COMPOSTO
          | IF EXPRESSAO {emiteComecoIf(llvm_file, $2, ++cont_if); $1 = cont_if;} THEN ENUNCIADO {emiteFimThen(llvm_file, $1);} ELSE ENUNCIADO {emiteFimElse(llvm_file, $1);}
-         | WHILE EXPRESSAO DO {emiteComecoWhile(llvm_file, $2, ++cont_while; $1 = cont_while);} ENUNCIADO 
+         | WHILE {emiteComecoWhile(llvm_file, ++cont_while); $1 = cont_while;} EXPRESSAO DO {emiteDoWhile(llvm_file, $3, $1);} ENUNCIADO {emiteFimWhile(llvm_file, $1);}
          |
          ;
 
@@ -118,7 +118,7 @@ VARIAVEL: ID
         ;
 
 CHAMADA_DE_PROCEDIMENTO: ID {emiteProcSemPar(llvm_file, $1, ts);}
-                    | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {emiteProcComPar(llvm_file, $1, $3, ts);}
+                    | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {emiteProcComPar(llvm_file, $1, $3, ts, &id_atual);}
                     ;
 
 LISTA_DE_EXPRESSOES: EXPRESSAO {$$ = cria_exp_lista_parametros(NULL, $1);}

@@ -2,6 +2,15 @@
 #include "compiler.h"
 #include <string.h>
 
+void emiteReadWrite(FILE *fp) {
+    fprintf(fp, "declare i32 @printf(ptr noundef, ...)\n");
+    fprintf(fp, "declare i32 @__isoc99_scanf(ptr noundef, ...)\n");
+    fprintf(fp, "@read_int = private unnamed_addr constant [3 x i8] c""%%d\\00"", align 1\n");
+    fprintf(fp, "@write_int = private unnamed_addr constant [4 x i8] c""%%d\\0A\\00"", align 1\n");
+    fprintf(fp, "@read_float = private unnamed_addr constant [3 x i8] c""%%f\\00"", align 1\n");
+    fprintf(fp, "@write_float = private unnamed_addr constant [4 x i8] c""%%f\\0A\\00"", align 1\n\n");
+}
+
 void emiteGlobal (FILE* fp, nodoID* nodo) {
     
     while (nodo) {
@@ -173,6 +182,26 @@ void emiteFimElse(FILE *fp, int cont_if) {
     fprintf(fp, "end_if_%d:\n", cont_if);
 }
 
+void emiteComecoWhile(FILE *fp, int cont_while) {
+    fprintf(fp, "br label %%while_%d\n", cont_while);
+    fprintf(fp, "while_%d:\n", cont_while);
+}
+
+void emiteDoWhile(FILE *fp, exp_t *exp, int cont_while) {
+    if (strcmp(exp->tipo, "1-BIT")) {
+        char erro[1000];
+        sprintf(erro, "Expressão incompatível com a declaração do WHILE!\n");
+        yyerror(erro); 
+    }
+
+    fprintf(fp, "br i1 %%%d, label %%do_%d, label %%end_while_%d\n", exp->id_temporario, cont_while, cont_while);
+    fprintf(fp, "do_%d:\n", cont_while);
+}
+
+void emiteFimWhile(FILE *fp, int cont_while) {
+    fprintf(fp, "br label %%while_%d\n" , cont_while);
+    fprintf(fp, "%%end_while_%d:\n" , cont_while);
+}
 
 void emiteMain (FILE *fp) {
     fprintf(fp, "\ndefine i32 @main() {\n");
@@ -191,7 +220,34 @@ void emiteProcSemPar (FILE *fp, char* proc, nodoID* ts) {
     fprintf(fp, "call %s @%s()\n" , converteTipo(ts_proc->tipo), proc);
 }
 
-void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
+void emiteWrite(FILE *fp, exp_t *parametros, nodoID *ts, int *id_atual) {
+    if (parametros->prox != NULL) {
+        char erro[1000];
+        sprintf(erro, "A função READ possui mais de um parâmetro!\n");
+        yyerror(erro);    
+    }
+
+    if (!strcmp("REAL", parametros->tipo)) {
+        int aux = *id_atual;
+        fprintf(fp, "%%%d = fpext float %%%d to double\n", *id_atual++, parametros->id_temporario);
+        fprintf(fp, "%%%d = call i32 (ptr, ...) @printf(ptr @write_float, double %%%d)\n", *id_atual++, aux);
+    } else {
+        fprintf(fp, "%%%d = call i32 (ptr, ...) @printf(ptr @write_int, i32 %%%d)\n", *id_atual++, parametros->id_temporario);
+    }
+
+
+}
+
+void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts, int* id_atual) {
+
+    if (!strcmp("write", proc)) {
+        emiteWrite(fp, parametros, ts, id_atual);
+        return;
+    } else if (!strcmp("read", proc)) {
+
+        return;
+    }
+    
     nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);
 
     if (!ts_proc) {
@@ -216,7 +272,7 @@ void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
         
         if (parametros == NULL) {
             char erro[1000];
-            sprintf(erro, "A função espera mais parâmetros, além dos que foram delcarados!\n");
+            sprintf(erro, "A função espera mais parâmetros, além dos que foram declarados!\n");
             yyerror(erro);       
         }
         
