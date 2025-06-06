@@ -13,7 +13,5 @@ begin
     x := y * x;
     z := 2 * z;
     x := plus(x,y);
-    write(x);
-    write(y);
-    write(z)
+    write(z,x,y)
 end.

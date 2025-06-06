@@ -13,9 +13,9 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo);
 char *converteTipo (char* tipo);
 void emiteNumero (FILE *fp, exp_t *novo_exp, int id_atual);
 void emiteVar (FILE *fp, exp_t *novo_exp, int id_atual);
-void emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
-void emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
-void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual);
+int emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
+int emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
+int emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual);
 void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual);
 void emiteMudancaSinal (FILE *fp, exp_t *exp, int id_atual);
 
@@ -35,9 +35,10 @@ void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts);
 int emiteWrite(FILE *fp, exp_t *parametros, nodoID *ts, int id_atual);
 int emiteRead(FILE *fp, exp_t *parametros, nodoID *ts, int id_atual);
 void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, int id_atual);
+void emiteRet (FILE *fp, nodoID *ts);
 
 void emiteErroRetorno(nodoID *ts);
 
-int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts);
+int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts, int *id_atual);
 
 #endif

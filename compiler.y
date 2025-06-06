@@ -78,7 +78,7 @@ DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRA
                            | /* empty */
                            ;
 
-DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {printTs(ts);emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); fprintf(llvm_file, "\n}\n"); escopo_atual--; func_tem_retorno = 0; id_atual = 0; cont_if = 0;}
+DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {printTs(ts);emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); emiteRet(llvm_file, ts); escopo_atual--; func_tem_retorno = 0; id_atual = 0; cont_if = 0;}
                          ;
 
 CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); retorno = concatNodo(NULL, $2, "retorno", escopo_atual); ts = attTabelaSimbolos(ts, retorno);} ARGUMENTOS DOIS_PONTOS TIPO {setTipoUm($1, $6); setTipoUm(retorno, $6); escopo_atual++;} PONTO_VIRGULA 
@@ -106,7 +106,7 @@ LISTA_DE_ENUNCIADOS: ENUNCIADO
                    | LISTA_DE_ENUNCIADOS PONTO_VIRGULA ENUNCIADO
                    ;
 
-ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {func_tem_retorno += armazenaVar(llvm_file, $1, $3, ts);}
+ENUNCIADO: VARIAVEL OPERADOR_ATRIBUICAO EXPRESSAO {func_tem_retorno += armazenaVar(llvm_file, $1, $3, ts, &id_atual);}
          | CHAMADA_DE_PROCEDIMENTO
          | ENUNCIADO_COMPOSTO
          | IF EXPRESSAO {emiteComecoIf(llvm_file, $2, ++cont_if); $1 = cont_if;} THEN ENUNCIADO {emiteFimThen(llvm_file, $1);} ELSE ENUNCIADO {emiteFimElse(llvm_file, $1);}
@@ -145,17 +145,20 @@ EXPRESSAO_SIMPLES: TERMO {$$ = $1;}
                     $$ = $2;
                  }
                  | EXPRESSAO_SIMPLES MAIS EXPRESSAO_SIMPLES 
-                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
-                 emiteSoma(llvm_file, $1, $3, id_atual); 
-                 id_atual++;}
+                 {
+                    $$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
+                    id_atual = emiteSoma(llvm_file, $1, $3, id_atual); 
+                 }
                  | EXPRESSAO_SIMPLES MENOS EXPRESSAO_SIMPLES 
-                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
-                 emiteSubtracao(llvm_file, $1, $3, id_atual); 
-                 id_atual++;}
+                 {
+                    $$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
+                    id_atual = emiteSubtracao(llvm_file, $1, $3, id_atual); 
+                 }
                  | EXPRESSAO_SIMPLES OR EXPRESSAO_SIMPLES 
-                 {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
-                 emiteOr(llvm_file, $1, $3, id_atual); 
-                 id_atual++;}
+                 {
+                    $$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
+                    emiteOr(llvm_file, $1, $3, id_atual++); 
+                 }
                  ;
 
 TERMO: FATOR {$$ = $1;}

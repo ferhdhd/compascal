@@ -91,30 +91,49 @@ void emiteNumero(FILE *fp, exp_t *novo_exp, int id_atual) {
 }
 
 void emiteVar(FILE *fp, exp_t *novo_exp, int id_atual) {
-    if (novo_exp->nodo_tabela->escopo)
+    if (novo_exp->nodo_tabela->escopo || !strcmp("parametro", novo_exp->nodo_tabela->tipo_simbolo) || !strcmp("parametro-ponteiro", novo_exp->nodo_tabela->tipo_simbolo) || !strcmp("retorno", novo_exp->nodo_tabela->tipo_simbolo))
         fprintf(fp, "%%%d = load %s, ptr %%%s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
     else
         fprintf(fp, "%%%d = load %s, ptr @%s\n", id_atual, converteTipo(novo_exp->tipo), novo_exp->nome);
     
 }
 
-void emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
-    if (!strcmp("REAL", exp_esq->tipo))
-        fprintf(fp, "%%%d = add %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+int emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
+    if (!strcmp("REAL", exp_esq->tipo) && !strcmp("INTEIRO", exp_dir->tipo)) {
+        fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_dir->id_temporario);
+        exp_dir->id_temporario = id_atual - 1;
+        fprintf(fp, "%%%d = fadd %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else if (!strcmp("INTEIRO", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
+        fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_esq->id_temporario);
+        exp_esq->id_temporario = id_atual - 1;
+        fprintf(fp, "%%%d = fadd %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    }
     else
         fprintf(fp, "%%%d = add %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    return id_atual;
 }
 
-void emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
-    if (!strcmp("REAL", exp_esq->tipo))
-        fprintf(fp, "%%%d = sub %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+int emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
+    if (!strcmp("REAL", exp_esq->tipo) && !strcmp("INTEIRO", exp_dir->tipo)) {
+        fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_dir->id_temporario);
+        exp_dir->id_temporario = id_atual - 1;
+        fprintf(fp, "%%%d = fsub %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else if (!strcmp("INTEIRO", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
+        fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_esq->id_temporario);
+        exp_esq->id_temporario = id_atual - 1;
+        fprintf(fp, "%%%d = fsub %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    }
     else
         fprintf(fp, "%%%d = sub %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    return id_atual;
 }
 
 void emiteOr (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
-    if (!strcmp("REAL", exp_esq->tipo))
-        fprintf(fp, "%%%d = or %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    if (!strcmp("REAL", exp_esq->tipo) || !strcmp("REAL", exp_dir->tipo)) {
+        char erro[1000];
+        sprintf(erro, "A operação OR opera apenas entre expressões do tipo inteiro!\n");
+        yyerror(erro); 
+    }
     else
         fprintf(fp, "%%%d = or %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
 }
@@ -126,11 +145,17 @@ void emiteMudancaSinal (FILE *fp, exp_t *exp, int id_atual) {
         fprintf(fp, "%%%d = mul %s %%%d, -1\n", id_atual, converteTipo(exp->tipo), exp->id_temporario);
 }
 
-void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual) {
+int emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atual) {
     if (!strcmp("*", op)) {
-        if (!strcmp("REAL", exp_esq->tipo))
+        if (!strcmp("REAL", exp_esq->tipo) && !strcmp("INTEIRO", exp_dir->tipo)) {
+            fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_dir->id_temporario);
+            exp_dir->id_temporario = id_atual - 1;
             fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
-        else
+        } else if (!strcmp("INTEIRO", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
+            fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_esq->id_temporario);
+            exp_esq->id_temporario = id_atual - 1;
+            fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        } else
             fprintf(fp, "%%%d = mul %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     } else if (!strcmp("div", op)) {
         fprintf(fp, "%%%d = sdiv %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
@@ -139,6 +164,7 @@ void emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atu
     } else if (!strcmp("and", op)) {
         fprintf(fp, "%%%d = and %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     }
+    return id_atual;
  }
 
 void emiteComparacao(FILE *fp, exp_t *esq, char *comparacao, exp_t *dir, int id_atual) {
@@ -199,7 +225,7 @@ void emiteDoWhile(FILE *fp, exp_t *exp, int cont_while) {
 
 void emiteFimWhile(FILE *fp, int cont_while) {
     fprintf(fp, "br label %%while_%d\n" , cont_while);
-    fprintf(fp, "%%end_while_%d:\n" , cont_while);
+    fprintf(fp, "end_while_%d:\n" , cont_while);
 }
 
 void emiteMain (FILE *fp) {
@@ -362,6 +388,16 @@ void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, 
     return;
 }
 
+void emiteRet (FILE *fp, nodoID *ts) {
+    nodoID *aux = NULL;
+    while (ts) {
+        if (!strcmp("retorno", ts->tipo_simbolo))
+            aux = ts;
+        ts = ts->prev;
+    }
+
+    fprintf(fp, "\nret %s %%%s\n}", converteTipo(aux->tipo), aux->nome);
+}
 
 
 void emiteErroRetorno(nodoID *ts) {
@@ -373,7 +409,7 @@ void emiteErroRetorno(nodoID *ts) {
     yyerror(erro);   
 }
 
-int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
+int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts, int *id_atual) {
     int eh_retorno = 0;
     nodoID *aux = procuraTabelaSimbolos(ts, var);
     if (aux == NULL) {
@@ -384,6 +420,10 @@ int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
         char erro[1000];
         sprintf(erro, "a variavel %s eh do tipo inteiro, enquanto a expressao eh real!\n", var);
         yyerror(erro);  
+    } else if (!strcmp(aux->tipo, "REAL") && !strcmp(exp->tipo, "INTEIRO")) {
+        fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", *id_atual, exp->id_temporario);
+        exp->id_temporario = *id_atual;
+        *id_atual = *id_atual + 1;
     }
 
     if (!strcmp("retorno", aux->tipo_simbolo))
@@ -391,7 +431,7 @@ int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts) {
     
     printf("tipo simobolo armazena var: %s\n", aux->tipo_simbolo);
 
-    if (aux->escopo == 0)
+    if (!aux->escopo && strcmp("parametro", aux->tipo_simbolo) && strcmp("parametro-ponteiro", aux->tipo_simbolo) && strcmp("retorno", aux->tipo_simbolo))
         fprintf(fp, "store %s %%%d, ptr @%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
     else
         fprintf(fp, "store %s %%%d, ptr %%%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);
