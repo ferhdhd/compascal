@@ -31,8 +31,9 @@ void emiteFimWhile(FILE *fp, int cont_while);
 
 void emiteMain (FILE *fp);
 void emiteProcSemPar (FILE *fp, char *proc, nodoID *ts);
-void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts, int *id_atual);
-void emiteWrite(FILE *fp, exp_t *parametros, nodoID *ts, int *id_atual);
+void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts);
+int emiteWrite(FILE *fp, exp_t *parametros, nodoID *ts, int id_atual);
+int emiteRead(FILE *fp, exp_t *parametros, nodoID *ts, int id_atual);
 void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, int id_atual);
 
 void emiteErroRetorno(nodoID *ts);

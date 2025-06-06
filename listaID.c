@@ -58,7 +58,7 @@ nodoID* simboloExisteTabela (nodoID* ts, nodoID *novaLista) {
     while (novaLista) {
         nodoID *inicioLista = ts;
         while (inicioLista) {
-            if (!strcmp(inicioLista->nome, novaLista->nome) && inicioLista->escopo == novaLista->escopo)
+            if (!strcmp(inicioLista->nome, novaLista->nome) && inicioLista->escopo == novaLista->escopo && !strcmp(inicioLista->tipo_simbolo, novaLista->tipo_simbolo))
                 return novaLista;
             printf("primeiro simb: %s segundo simb: %s\n" , inicioLista->nome, novaLista->nome);
             inicioLista = inicioLista->prev;
@@ -278,12 +278,12 @@ exp_t* cria_exp_comparacao(exp_t *esq, char *op, exp_t *dir, int id_atual) {
 int var_func_proc (nodoID* ts, char *nome) {
     nodoID* nodo = procuraTabelaSimbolos(ts, nome);
 
-    printf("nome: %s tipo:%s\n " , nome, nodo->tipo_simbolo);
     if (nodo == NULL) {
         char erro[1000];
         sprintf(erro, "a variavel %s nao foi declarada anteriormente!\n", nome);
         yyerror(erro);
     }
+    printf("nome: %s tipo:%s\n " , nome, nodo->tipo_simbolo);
 
     if ((!strcmp("variavel", nodo->tipo_simbolo) || !strcmp("parametro", nodo->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->tipo_simbolo)))
         return 0;

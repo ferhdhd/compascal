@@ -21,10 +21,9 @@ void emiteGlobal (FILE* fp, nodoID* nodo) {
 
 void emiteFunc (FILE* fp, nodoID* nodo) {
 
-    while (nodo->escopo != 0) { // precisa iterar sobre as vars locais e parametros ate chegar na def da func
+    while (strcmp("retorno", nodo->tipo_simbolo)) { // precisa iterar sobre as vars locais e parametros ate chegar na def da func
         nodo = nodo->prev;
     }
-
     fprintf(fp, "\ndefine %s @%s(", converteTipo(nodo->tipo), nodo->nome); // escreve o nome da funcao e seu tipo
     nodo = emiteParametrosFunc(fp, nodo->prox);
 
@@ -220,34 +219,45 @@ void emiteProcSemPar (FILE *fp, char* proc, nodoID* ts) {
     fprintf(fp, "call %s @%s()\n" , converteTipo(ts_proc->tipo), proc);
 }
 
-void emiteWrite(FILE *fp, exp_t *parametros, nodoID *ts, int *id_atual) {
-    if (parametros->prox != NULL) {
-        char erro[1000];
-        sprintf(erro, "A função READ possui mais de um parâmetro!\n");
-        yyerror(erro);    
+int emiteWrite(FILE *fp, exp_t *parametros, nodoID *ts, int id_atual) {
+    while (parametros) {
+        if (!strcmp("REAL", parametros->tipo)) {
+            fprintf(fp, "%%%d = fpext float %%%d to double\n", id_atual++, parametros->id_temporario);
+            fprintf(fp, "%%%d = call i32 (ptr, ...) @printf(ptr @write_float, double %%%d)\n", id_atual++, id_atual-1);
+        } else {
+            fprintf(fp, "%%%d = call i32 (ptr, ...) @printf(ptr @write_int, i32 %%%d)\n", id_atual++, parametros->id_temporario);
+        }
+        parametros = parametros->prox;
     }
-
-    if (!strcmp("REAL", parametros->tipo)) {
-        int aux = *id_atual;
-        fprintf(fp, "%%%d = fpext float %%%d to double\n", *id_atual++, parametros->id_temporario);
-        fprintf(fp, "%%%d = call i32 (ptr, ...) @printf(ptr @write_float, double %%%d)\n", *id_atual++, aux);
-    } else {
-        fprintf(fp, "%%%d = call i32 (ptr, ...) @printf(ptr @write_int, i32 %%%d)\n", *id_atual++, parametros->id_temporario);
-    }
-
-
+    return id_atual;
 }
 
-void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts, int* id_atual) {
-
-    if (!strcmp("write", proc)) {
-        emiteWrite(fp, parametros, ts, id_atual);
-        return;
-    } else if (!strcmp("read", proc)) {
-
-        return;
+int emiteRead(FILE *fp, exp_t *parametros, nodoID *ts, int id_atual) {
+    while (parametros) {
+        if (parametros->nodo_tabela && strcmp("variavel", parametros->nodo_tabela->tipo_simbolo)) {
+            printf("tipo simb: %s\n" , parametros->tipo_simbolo);
+            char erro[1000];
+            sprintf(erro, "O parâmetro da função READ não é uma variável!\n");
+            yyerror(erro);
+        }
+        
+        if (!strcmp("REAL", parametros->tipo)) {
+            if (parametros->nodo_tabela->escopo == 1)
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_float, ptr %%%s)\n", id_atual++, parametros->nodo_tabela->nome);
+            else
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_float, ptr @%s)\n", id_atual++, parametros->nodo_tabela->nome);
+        } else {
+            if (parametros->nodo_tabela->escopo == 1)
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_int, ptr %%%s)\n", id_atual++, parametros->nodo_tabela->nome);
+            else
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_int, ptr @%s)\n", id_atual++, parametros->nodo_tabela->nome);
+        }
+        parametros = parametros->prox;
     }
-    
+    return id_atual;
+}
+
+void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
     nodoID *ts_proc = procuraTabelaSimbolos(ts, proc);
 
     if (!ts_proc) {
@@ -305,6 +315,7 @@ void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, 
         yyerror(erro);    
     }
 
+    printTs(ts);
     nodoID *par_func = ts_func->prox->prox; // primeiro parametro do proc na lista de simbolos
     
     if (((strcmp("parametro", par_func->tipo_simbolo)) && strcmp("parametro-ponteiro", par_func->tipo_simbolo)) && parametros) {
@@ -315,13 +326,13 @@ void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, 
     
     fprintf(fp, "%%%d := call %s @%s(" , id_atual, converteTipo(ts_func->tipo), funcao->nome);
 
-    while (!strcmp("parametro-ponteiro", par_func->tipo_simbolo) || !strcmp("parametro", par_func->tipo_simbolo)) {
+    while (par_func && (!strcmp("parametro-ponteiro", par_func->tipo_simbolo) || !strcmp("parametro", par_func->tipo_simbolo))) {
         printf("par_func_tipo: %s\n" , par_func->tipo_simbolo);
         printf("parametro_tipo: %s\n" , par_func->tipo_simbolo);
         
         if (parametros == NULL) {
             char erro[1000];
-            sprintf(erro, "A função espera mais parâmetros, além dos que foram delcarados!\n");
+            sprintf(erro, "A função espera mais parâmetros, além dos que foram declarados!\n");
             yyerror(erro);       
         }
         
@@ -338,6 +349,12 @@ void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, 
         
         par_func = par_func->prox;
         parametros = parametros->prox;
+    }
+
+    if (!par_func && parametros) {
+        char erro[1000];
+        sprintf(erro, "Foram passados mais parâmetros em relação aos que a função espera!\n");
+        yyerror(erro);    
     }
     
     fprintf(fp, ")\n");

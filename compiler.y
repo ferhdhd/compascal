@@ -78,11 +78,11 @@ DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRA
                            | /* empty */
                            ;
 
-DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); fprintf(llvm_file, "\n}\n"); escopo_atual--; func_tem_retorno = 0; id_atual = 0; cont_if = 0;}
+DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {printTs(ts);emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); fprintf(llvm_file, "\n}\n"); escopo_atual--; func_tem_retorno = 0; id_atual = 0; cont_if = 0;}
                          ;
 
-CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); escopo_atual++; retorno = concatNodo(NULL, $2, "retorno", escopo_atual); ts = attTabelaSimbolos(ts, retorno);} ARGUMENTOS DOIS_PONTOS TIPO {setTipoUm($1, $6); setTipoUm(retorno, $6);} PONTO_VIRGULA 
-                        | PROCEDURE ID {$1 = concatNodo(NULL, $2, "procedure", escopo_atual); setTipo($1, "VOID"); ts = attTabelaSimbolos(ts, $1); escopo_atual++; func_tem_retorno++;} ARGUMENTOS PONTO_VIRGULA 
+CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); retorno = concatNodo(NULL, $2, "retorno", escopo_atual); ts = attTabelaSimbolos(ts, retorno);} ARGUMENTOS DOIS_PONTOS TIPO {setTipoUm($1, $6); setTipoUm(retorno, $6); escopo_atual++;} PONTO_VIRGULA 
+                        | PROCEDURE ID {$1 = concatNodo(NULL, $2, "procedure", escopo_atual); setTipo($1, "VOID"); ts = attTabelaSimbolos(ts, $1); func_tem_retorno++;} ARGUMENTOS {escopo_atual++;} PONTO_VIRGULA 
                         ;
 
 ARGUMENTOS: ABRE_PARENTESES LISTA_DE_PARAMETROS FECHA_PARENTESES
@@ -118,7 +118,14 @@ VARIAVEL: ID
         ;
 
 CHAMADA_DE_PROCEDIMENTO: ID {emiteProcSemPar(llvm_file, $1, ts);}
-                    | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {emiteProcComPar(llvm_file, $1, $3, ts, &id_atual);}
+                    | ID ABRE_PARENTESES LISTA_DE_EXPRESSOES FECHA_PARENTESES {
+                    if (!strcmp("write", $1)) {
+                        id_atual = emiteWrite(llvm_file, $3, ts, id_atual);
+                    } else if (!strcmp("read", $1)) {
+                        id_atual = emiteRead(llvm_file, $3, ts, id_atual);
+                    } else {
+                        emiteProcComPar(llvm_file, $1, $3, ts);
+                    }}
                     ;
 
 LISTA_DE_EXPRESSOES: EXPRESSAO {$$ = cria_exp_lista_parametros(NULL, $1);}

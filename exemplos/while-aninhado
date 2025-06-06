@@ -10,7 +10,7 @@ begin
       b := 5;
       while  b > 0  do
       begin
-        write(b);
+        write(a,b);
         b := b - 1
       end
    end

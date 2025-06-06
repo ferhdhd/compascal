@@ -1,8 +1,0 @@
-program simples (input, output);
-var x,y: integer;
-var z: real;
-procedure plus (a,b: integer);
-var p,l,m: integer;
-begin
-    z := 4 * (b + 2.5 * 5)
-end;
