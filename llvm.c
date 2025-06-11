@@ -5,23 +5,26 @@
 void emiteReadWrite(FILE *fp) {
     fprintf(fp, "declare i32 @printf(ptr noundef, ...)\n");
     fprintf(fp, "declare i32 @__isoc99_scanf(ptr noundef, ...)\n");
-    fprintf(fp, "@read_int = private unnamed_addr constant [3 x i8] c""%%d\\00"", align 1\n");
-    fprintf(fp, "@write_int = private unnamed_addr constant [4 x i8] c""%%d\\0A\\00"", align 1\n");
-    fprintf(fp, "@read_float = private unnamed_addr constant [3 x i8] c""%%f\\00"", align 1\n");
-    fprintf(fp, "@write_float = private unnamed_addr constant [4 x i8] c""%%f\\0A\\00"", align 1\n\n");
+    fprintf(fp, "@read_int = private unnamed_addr constant [3 x i8] c\"%%d\\00\", align 1\n");
+    fprintf(fp, "@write_int = private unnamed_addr constant [4 x i8] c\"%%d\\0A\\00\", align 1\n");
+    fprintf(fp, "@read_float = private unnamed_addr constant [3 x i8] c\"%%f\\00\", align 1\n");
+    fprintf(fp, "@write_float = private unnamed_addr constant [4 x i8] c\"%%f\\0A\\00\", align 1\n\n");
 }
 
 void emiteGlobal (FILE* fp, nodoID* nodo) {
     
     while (nodo) {
-    fprintf(fp, "@%s = global %s 0\n", nodo->nome, converteTipo(nodo->tipo));
-    nodo = nodo->prev;
+        if (!strcmp("REAL", nodo->tipo))
+            fprintf(fp, "@%s = global %s 0.0\n", nodo->nome, converteTipo(nodo->tipo));
+        else
+            fprintf(fp, "@%s = global %s 0\n", nodo->nome, converteTipo(nodo->tipo));
+        nodo = nodo->prev;
     }
 }
 
 void emiteFunc (FILE* fp, nodoID* nodo) {
 
-    while (strcmp("retorno", nodo->tipo_simbolo)) { // precisa iterar sobre as vars locais e parametros ate chegar na def da func
+    while (strcmp("retorno", nodo->tipo_simbolo) && strcmp("procedure", nodo->tipo_simbolo)) { // precisa iterar sobre as vars locais e parametros ate chegar na def da func
         nodo = nodo->prev;
     }
     fprintf(fp, "\ndefine %s @%s(", converteTipo(nodo->tipo), nodo->nome); // escreve o nome da funcao e seu tipo
@@ -39,7 +42,7 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
         } else if (!strcmp("parametro-ponteiro", nodo->tipo_simbolo)) {
             fprintf(fp, "ptr ");
             fprintf(fp, "%%");
-            fprintf(fp, "%s_t", nodo->nome);
+            fprintf(fp, "%s", nodo->nome);
         }
         
         if (strcmp("retorno", nodo->tipo_simbolo) && nodo->prox && (!strcmp("parametro", nodo->prox->tipo_simbolo) || !strcmp("parametro-ponteiro", nodo->prox->tipo_simbolo))) {
@@ -66,6 +69,7 @@ nodoID* emiteParametrosFunc (FILE* fp, nodoID* nodo) {
             fprintf(fp, "%%%s = alloca %s\n", aux->nome, converteTipo(aux->tipo));
             fprintf(fp, "store %s %%%s_t, ptr %%%s\n", converteTipo(aux->tipo), aux->nome, aux->nome);
         } else if (!strcmp("variavel", aux->tipo_simbolo) || !strcmp("retorno", aux->tipo_simbolo)) {
+            printf("simbolo: %s\n", aux->nome);
             fprintf(fp, "%%%s = alloca %s\n", aux->nome, converteTipo(aux->tipo));
         }
         aux = aux->prox;
@@ -102,14 +106,15 @@ int emiteSoma (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
     if (!strcmp("REAL", exp_esq->tipo) && !strcmp("INTEIRO", exp_dir->tipo)) {
         fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_dir->id_temporario);
         exp_dir->id_temporario = id_atual - 1;
-        fprintf(fp, "%%%d = fadd %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        fprintf(fp, "%%%d = fadd %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     } else if (!strcmp("INTEIRO", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
         fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_esq->id_temporario);
         exp_esq->id_temporario = id_atual - 1;
-        fprintf(fp, "%%%d = fadd %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
-    }
-    else
-        fprintf(fp, "%%%d = add %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        fprintf(fp, "%%%d = fadd %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else if (!strcmp("REAL", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
+        fprintf(fp, "%%%d = fadd %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else
+        fprintf(fp, "%%%d = add %s %%%d, %%%d\n", id_atual++, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     return id_atual;
 }
 
@@ -117,14 +122,15 @@ int emiteSubtracao (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, int id_atual) {
     if (!strcmp("REAL", exp_esq->tipo) && !strcmp("INTEIRO", exp_dir->tipo)) {
         fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_dir->id_temporario);
         exp_dir->id_temporario = id_atual - 1;
-        fprintf(fp, "%%%d = fsub %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        fprintf(fp, "%%%d = fsub %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     } else if (!strcmp("INTEIRO", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
         fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_esq->id_temporario);
         exp_esq->id_temporario = id_atual - 1;
-        fprintf(fp, "%%%d = fsub %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
-    }
-    else
-        fprintf(fp, "%%%d = sub %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        fprintf(fp, "%%%d = fsub %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else if (!strcmp("REAL", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
+        fprintf(fp, "%%%d = fsub %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+    } else
+        fprintf(fp, "%%%d = sub %s %%%d, %%%d\n", id_atual++, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     return id_atual;
 }
 
@@ -150,19 +156,21 @@ int emiteOpMult (FILE *fp, exp_t *exp_esq, exp_t *exp_dir, char *op, int id_atua
         if (!strcmp("REAL", exp_esq->tipo) && !strcmp("INTEIRO", exp_dir->tipo)) {
             fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_dir->id_temporario);
             exp_dir->id_temporario = id_atual - 1;
-            fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+            fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
         } else if (!strcmp("INTEIRO", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
             fprintf(fp, "%%%d = sitofp i32 %%%d to float\n", id_atual++, exp_esq->id_temporario);
             exp_esq->id_temporario = id_atual - 1;
-            fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+            fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual++, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        } else if (!strcmp("REAL", exp_esq->tipo) && !strcmp("REAL", exp_dir->tipo)) {
+            fprintf(fp, "%%%d = fmul %s %%%d, %%%d\n", id_atual++, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
         } else
-            fprintf(fp, "%%%d = mul %s %%%d, %%%d\n", id_atual, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+            fprintf(fp, "%%%d = mul %s %%%d, %%%d\n", id_atual++, converteTipo(exp_dir->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     } else if (!strcmp("div", op)) {
-        fprintf(fp, "%%%d = sdiv %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        fprintf(fp, "%%%d = sdiv %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     } else if (!strcmp("mod", op)) {
-        fprintf(fp, "%%%d = srem %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        fprintf(fp, "%%%d = srem %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     } else if (!strcmp("and", op)) {
-        fprintf(fp, "%%%d = and %s %%%d, %%%d\n", id_atual, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
+        fprintf(fp, "%%%d = and %s %%%d, %%%d\n", id_atual++, converteTipo(exp_esq->tipo), exp_esq->id_temporario, exp_dir->id_temporario);
     }
     return id_atual;
  }
@@ -269,14 +277,14 @@ int emiteRead(FILE *fp, exp_t *parametros, nodoID *ts, int id_atual) {
         
         if (!strcmp("REAL", parametros->tipo)) {
             if (parametros->nodo_tabela->escopo == 1)
-                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_float, ptr %%%s)\n", id_atual++, parametros->nodo_tabela->nome);
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @__isoc99_scanf(ptr @read_float, ptr %%%s)\n", id_atual++, parametros->nodo_tabela->nome);
             else
-                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_float, ptr @%s)\n", id_atual++, parametros->nodo_tabela->nome);
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @__isoc99_scanf(ptr @read_float, ptr @%s)\n", id_atual++, parametros->nodo_tabela->nome);
         } else {
             if (parametros->nodo_tabela->escopo == 1)
-                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_int, ptr %%%s)\n", id_atual++, parametros->nodo_tabela->nome);
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @__isoc99_scanf(ptr @read_int, ptr %%%s)\n", id_atual++, parametros->nodo_tabela->nome);
             else
-                fprintf(fp, "%%%d = call i32 (ptr, ...) @scanf(ptr @read_int, ptr @%s)\n", id_atual++, parametros->nodo_tabela->nome);
+                fprintf(fp, "%%%d = call i32 (ptr, ...) @__isoc99_scanf(ptr @read_int, ptr @%s)\n", id_atual++, parametros->nodo_tabela->nome);
         }
         parametros = parametros->prox;
     }
@@ -302,7 +310,7 @@ void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
     
     fprintf(fp, "call %s @%s(" , converteTipo(ts_proc->tipo), proc);
 
-    while (!strcmp("parametro-ponteiro", par_proc->tipo_simbolo) || !strcmp("parametro", par_proc->tipo_simbolo)) {
+    while (par_proc && (!strcmp("parametro-ponteiro", par_proc->tipo_simbolo) || !strcmp("parametro", par_proc->tipo_simbolo))) {
         printf("par_proc_tipo: %s\n" , par_proc->tipo_simbolo);
         printf("parametro_tipo: %s\n" , par_proc->tipo_simbolo);
         
@@ -318,7 +326,17 @@ void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
             yyerror(erro);       
         }
 
-        fprintf(fp, "%%%d", parametros->id_temporario);
+        if (!strcmp("parametro-ponteiro", par_proc->tipo_simbolo) && strcmp("variavel", parametros->tipo_simbolo)) {
+            char erro[1200];
+            sprintf(erro, "o tipo do parâmetro passado não é uma variável e não pode ser passado por referência!\n");
+            yyerror(erro);      
+        }
+
+        if (!strcmp("parametro-ponteiro", par_proc->tipo_simbolo))
+            fprintf(fp, "ptr @%s", parametros->nodo_tabela->nome);
+        else
+            fprintf(fp, "%s %%%d", converteTipo(parametros->tipo), parametros->id_temporario);
+
         
         if (parametros->prox) // se tiver mais parametros, printa a virgula
             fprintf(fp, ",");
@@ -327,6 +345,12 @@ void emiteProcComPar (FILE *fp, char *proc, exp_t *parametros, nodoID *ts) {
         parametros = parametros->prox;
     }
     
+    if (!par_proc && parametros) {
+        char erro[1000];
+        sprintf(erro, "Foram passados mais parâmetros em relação aos que o procedimento espera!\n");
+        yyerror(erro);    
+    }
+
     fprintf(fp, ")\n");
     
     return;
@@ -350,7 +374,7 @@ void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, 
         yyerror(erro);       
     }
     
-    fprintf(fp, "%%%d := call %s @%s(" , id_atual, converteTipo(ts_func->tipo), funcao->nome);
+    fprintf(fp, "%%%d = call %s @%s(" , id_atual, converteTipo(ts_func->tipo), funcao->nome);
 
     while (par_func && (!strcmp("parametro-ponteiro", par_func->tipo_simbolo) || !strcmp("parametro", par_func->tipo_simbolo))) {
         printf("par_func_tipo: %s\n" , par_func->tipo_simbolo);
@@ -368,7 +392,16 @@ void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, 
             yyerror(erro);       
         }
 
-        fprintf(fp, "%%%d", parametros->id_temporario);
+        if (!strcmp("paramentro-ponteiro", par_func->tipo_simbolo) && strcmp("variavel", parametros->tipo_simbolo)) {
+            char erro[1200];
+            sprintf(erro, "o tipo do parâmetro passado não é uma variável e não pode ser passado por referência!\n");
+            yyerror(erro);      
+        }
+
+        if (!strcmp("parametro-ponteiro", par_func->tipo_simbolo))
+            fprintf(fp, "ptr @%s", parametros->nodo_tabela->nome);
+        else
+            fprintf(fp, "%s %%%d", converteTipo(parametros->tipo), parametros->id_temporario);
         
         if (parametros->prox) // se tiver mais parametros, printa a virgula
             fprintf(fp, ",");
@@ -388,15 +421,19 @@ void emiteRetornoFuncao(FILE *fp, exp_t *parametros, exp_t *funcao, nodoID *ts, 
     return;
 }
 
-void emiteRet (FILE *fp, nodoID *ts) {
+void emiteRet (FILE *fp, nodoID *ts, int id_atual) {
     nodoID *aux = NULL;
     while (ts) {
-        if (!strcmp("retorno", ts->tipo_simbolo))
+        if (!strcmp("procedure", ts->tipo_simbolo)) {
+            fprintf(fp, "\nret void\n}\n");
+            return;
+        }
+        else if (!strcmp("retorno", ts->tipo_simbolo))
             aux = ts;
         ts = ts->prev;
     }
-
-    fprintf(fp, "\nret %s %%%s\n}", converteTipo(aux->tipo), aux->nome);
+    fprintf(fp, "%%%d = load %s, ptr %%%s\n", id_atual, converteTipo(aux->tipo), aux->nome);
+    fprintf(fp, "\nret %s %%%d\n}", converteTipo(aux->tipo), id_atual);
 }
 
 
@@ -429,7 +466,7 @@ int armazenaVar (FILE *fp, char *var, exp_t *exp, nodoID *ts, int *id_atual) {
     if (!strcmp("retorno", aux->tipo_simbolo))
         eh_retorno = 1;
     
-    printf("tipo simobolo armazena var: %s\n", aux->tipo_simbolo);
+    printf("tipo simbolo armazena var: %s\n", aux->tipo_simbolo);
 
     if (!aux->escopo && strcmp("parametro", aux->tipo_simbolo) && strcmp("parametro-ponteiro", aux->tipo_simbolo) && strcmp("retorno", aux->tipo_simbolo))
         fprintf(fp, "store %s %%%d, ptr @%s\n", converteTipo(aux->tipo), exp->id_temporario, aux->nome);

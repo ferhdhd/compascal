@@ -78,7 +78,7 @@ DECLARACOES_DE_SUBPROGRAMAS: DECLARACOES_DE_SUBPROGRAMAS DECLARACAO_DE_SUBPROGRA
                            | /* empty */
                            ;
 
-DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {printTs(ts);emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); emiteRet(llvm_file, ts); escopo_atual--; func_tem_retorno = 0; id_atual = 0; cont_if = 0;}
+DECLARACAO_DE_SUBPROGRAMA: CABECALHO_DE_SUBPROGRAMA DECLARACOES {printTs(ts); emiteFunc(llvm_file, ts);} ENUNCIADO_COMPOSTO {if (func_tem_retorno <= 0) emiteErroRetorno(ts); emiteRet(llvm_file, ts, id_atual); escopo_atual--; func_tem_retorno = 0; id_atual = 0; cont_if = 0;}
                          ;
 
 CABECALHO_DE_SUBPROGRAMA: FUNCTION ID {$1 = concatNodo(NULL, $2, "funcao", escopo_atual); ts = attTabelaSimbolos(ts, $1); retorno = concatNodo(NULL, $2, "retorno", escopo_atual); ts = attTabelaSimbolos(ts, retorno);} ARGUMENTOS DOIS_PONTOS TIPO {setTipoUm($1, $6); setTipoUm(retorno, $6); escopo_atual++;} PONTO_VIRGULA 
@@ -92,7 +92,7 @@ ARGUMENTOS: ABRE_PARENTESES LISTA_DE_PARAMETROS FECHA_PARENTESES
 LISTA_DE_PARAMETROS: LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($1, $3); setTipoSimb($1, "parametro"); ts = attTabelaSimbolos(ts, $1);} 
                    | VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($2, $4); setTipoSimb($2, "parametro-ponteiro"); ts = attTabelaSimbolos(ts, $2);} 
                    | LISTA_DE_PARAMETROS PONTO_VIRGULA LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($3, $5); setTipoSimb($3, "parametro"); ts = attTabelaSimbolos(ts, $3);} 
-                   | LISTA_DE_PARAMETROS PONTO_VIRGULA VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($4, $6); setTipo($4, "parametro-ponteiro"); ts = attTabelaSimbolos(ts, $4);} 
+                   | LISTA_DE_PARAMETROS PONTO_VIRGULA VAR LISTA_DE_IDENTIFICADORES DOIS_PONTOS TIPO {setTipo($4, $6); setTipoSimb($4, "parametro-ponteiro"); ts = attTabelaSimbolos(ts, $4);} 
                    ;
 
 ENUNCIADO_COMPOSTO: BEGIN_TOKEN ENUNCIADOS_OPCIONAIS END
@@ -148,6 +148,7 @@ EXPRESSAO_SIMPLES: TERMO {$$ = $1;}
                  {
                     $$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
                     id_atual = emiteSoma(llvm_file, $1, $3, id_atual); 
+                    printf("id_atual: %d\n" , id_atual);
                  }
                  | EXPRESSAO_SIMPLES MENOS EXPRESSAO_SIMPLES 
                  {
@@ -157,19 +158,19 @@ EXPRESSAO_SIMPLES: TERMO {$$ = $1;}
                  | EXPRESSAO_SIMPLES OR EXPRESSAO_SIMPLES 
                  {
                     $$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
-                    emiteOr(llvm_file, $1, $3, id_atual++); 
+                    emiteOr(llvm_file, $1, $3, id_atual); 
                  }
                  ;
 
 TERMO: FATOR {$$ = $1;}
-     | TERMO OPERADOR_MULTIPLICATIVO FATOR {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual); emiteOpMult(llvm_file, $1, $3, $2, id_atual); id_atual++;}
+     | TERMO OPERADOR_MULTIPLICATIVO FATOR {$$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual); id_atual = emiteOpMult(llvm_file, $1, $3, $2, id_atual);}
      ;
 
 FATOR: ID 
     {
         if (var_func_proc(ts, $1) == 0) {
             printf("%s: eh var\n" , $1);
-            $$ = cria_exp(ts, llvm_file, "", $1, id_atual); 
+            $$ = cria_exp(ts, llvm_file, "variavel", $1, id_atual); 
             id_atual++;
         } else if (var_func_proc(ts, $1) == 1) {
             printf("eh proc\n");
