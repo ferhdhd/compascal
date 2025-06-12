@@ -1,0 +1,17 @@
+program teste_and (input, output);
+var
+   a, b: integer;
+begin
+   read(a);
+   read(b);
+
+   if (a > 0) or (b > 0) then
+       write(a)
+   else
+       write(b);
+
+   if (a > 0) and (b > 0) then
+       write(a)
+   else
+       write(b)
+end.

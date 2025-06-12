@@ -158,7 +158,7 @@ EXPRESSAO_SIMPLES: TERMO {$$ = $1;}
                  | EXPRESSAO_SIMPLES OR EXPRESSAO_SIMPLES 
                  {
                     $$ = cria_exp_de_exp(ts, llvm_file, "exp", $1, $2, $3, id_atual);
-                    emiteOr(llvm_file, $1, $3, id_atual); 
+                    emiteOr(llvm_file, $1, $3, id_atual++); 
                  }
                  ;
 

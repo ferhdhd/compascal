@@ -217,7 +217,7 @@ exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, cha
     
     // verificacao de erros para operadores multiplicativos
     if (!strcmp(op, "and") || !strcmp(op, "mod") || !strcmp(op, "div")) {
-        if (!(!strcmp(esq->tipo, "INTEIRO") && !strcmp(dir->tipo, "INTEIRO"))) {
+        if ((strcmp(esq->tipo, "INTEIRO") && strcmp(dir->tipo, "INTEIRO")) && (strcmp(esq->tipo, "1-BIT") && strcmp(dir->tipo, "1-BIT"))) {
             char erro[1000];
             sprintf(erro, "a operação %s precisa de duas expressões de tipo INTEIRO para funcionar!\n", op);
             yyerror(erro);            
@@ -232,6 +232,8 @@ exp_t* cria_exp_de_exp(nodoID *ts, FILE *fp, char *tipo_simbolo, exp_t *esq, cha
     
     if (!strcmp(esq->tipo, "REAL") || !strcmp(dir->tipo, "REAL")) {
         strcpy(novo_exp->tipo, "REAL");
+    } else if (!strcmp(esq->tipo, "1-BIT") && !strcmp(dir->tipo, "1-BIT")) {
+        strcpy(novo_exp->tipo, esq->tipo);
     } else {
         strcpy(novo_exp->tipo, "INTEIRO");
     }

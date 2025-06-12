@@ -9,7 +9,7 @@ char err_buffer[500];
 
 DIGITOS [0-9]+
 NUM {DIGITOS}(\.{DIGITOS})?([Ee][+-]?{DIGITOS})?
-ID [a-zA-Z][a-zA-Z1-9]*
+ID [_a-zA-Z][_a-zA-Z0-9]*
 
 %%
 
